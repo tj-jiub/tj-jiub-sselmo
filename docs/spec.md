@@ -38,6 +38,7 @@ Mockup: `docs/mockup-matching.html` (https://claude.ai/artifact/KX92kBDanSiYbBJd
 - **Highlight** looks like a mouse-drag text selection (solid full-line pastel block), not a half-height marker.
 - **Highlight sparingly:** at most one highlight per screen, in the headline only. Never put a pastel fill behind numbers or body text (low contrast); emphasise numbers with bold ink. Green is for the bar and the top-card ring only.
 - **Font: Noto Sans KR** everywhere (replaces Pretendard).
+- **Highlight colour is translucent** (yellow `rgba(255,221,87,.45)`), same as `::selection`. **Card borders are thin 1px lines** (top recommendation: 1px green `#8FCB6E`, no thick ring).
 - **Typography:** golden ratio. Scale ×1.618 from 16px (16 / 26 / 42 / 68), captions ÷√φ (12.6px), body line-height 1.618, 61.8/38.2 golden split layouts.
 - **Colours:** two pastel accents, yellow `#FFF0A6` and green `#D3F0BF` (deeper `#F2D65C` / `#8FCB6E` for marks), used only as fills; text stays ink `#1D1D1B`. Replaces the single orange accent.
 

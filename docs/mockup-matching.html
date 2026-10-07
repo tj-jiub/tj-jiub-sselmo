@@ -21,7 +21,7 @@
   --a-yellow-deep: #f2d65c;
   --a-green: #d3f0bf;
   --a-green-deep: #8fcb6e;
-  --a-yellow-sel: #ffe98a;
+  --a-yellow-sel: rgba(255, 221, 87, 0.45);
   /* Golden-ratio type scale: base 16, ×1.618 up, ÷1.272 (√φ) for captions */
   --t-cap: 12.6px;
   --t-base: 16px;
@@ -41,7 +41,7 @@
 /* Korean wraps only between words, never inside one. */
 body, .app { word-break: keep-all; overflow-wrap: break-word; }
 .app p, .app li, .notes li, .top p { text-wrap: pretty; }
-::selection { background: #fff0a6; color: #1d1d1b; }
+::selection { background: rgba(255, 221, 87, 0.45); color: #1d1d1b; }
 button, input, select, textarea { font-family: inherit; }
 body { background: var(--bg); color: var(--fg); font-family: var(--sans); padding-inline: 16px; padding-block: 40px 96px; }
 .board { max-width: 1240px; margin: 0 auto; }
@@ -105,9 +105,9 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans); paddin
 .app .steps .done { border-color: var(--a-green-deep); }
 
 .app .choice-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 40px; }
-.app .choice { border: 1.5px solid var(--a-line); border-radius: 14px; padding: 28px; cursor: pointer; text-align: left; background: var(--a-paper); font: inherit; color: inherit; }
-.app .choice:hover { border-color: var(--a-ink); }
-.app .choice.sel { border-color: var(--a-ink); background: var(--a-yellow); }
+.app .choice { border: 1px solid var(--a-line); border-radius: 14px; padding: 28px; cursor: pointer; text-align: left; background: var(--a-paper); font: inherit; color: inherit; }
+.app .choice:hover { border-color: var(--a-muted); }
+.app .choice.sel { border-color: var(--a-yellow-deep); background: var(--a-yellow); }
 .app .choice b { display: block; font-size: var(--t-h3); line-height: 1.382; }
 .app .choice span { display: block; color: var(--a-muted); margin-top: 6px; font-size: 15px; }
 .app .choice.sel span { color: var(--a-ink); }
@@ -131,7 +131,7 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans); paddin
 
 .app .cards { display: grid; gap: 16px; margin-top: 28px; }
 .app .card { display: grid; grid-template-columns: 1fr auto; gap: 8px 32px; align-items: center; border: 1px solid var(--a-line); border-radius: 14px; padding: 24px 28px; background: var(--a-paper); }
-.app .card.top { border-color: var(--a-ink); box-shadow: 0 0 0 3px var(--a-green); }
+.app .card.top { border-color: var(--a-green-deep); }
 .app .card .where { font-size: var(--t-cap); color: var(--a-muted); }
 .app .card .name { font-size: 20px; font-weight: 700; margin-top: 2px; }
 .app .card .intent { margin-top: 10px; font-size: 15px; }
@@ -146,7 +146,7 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans); paddin
 .app .rank { font-family: var(--mono); font-size: 13px; color: var(--a-muted); }
 
 .app .hero-wrap { display: grid; grid-template-columns: 1.618fr 1fr; gap: 56px; align-items: end; }
-.app .role { display: block; border: 1.5px solid var(--a-ink); border-radius: 14px; padding: 24px 26px; text-decoration: none; color: inherit; background: var(--a-paper); }
+.app .role { display: block; border: 1px solid var(--a-line); border-radius: 14px; padding: 24px 26px; text-decoration: none; color: inherit; background: var(--a-paper); }
 .app .role.primary { background: var(--a-yellow); }
 .app .role b { display: block; font-size: 20px; }
 .app .role span { display: block; color: var(--a-muted); font-size: 14.5px; margin-top: 4px; }
@@ -206,12 +206,13 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans); paddin
 <div class="board">
 
   <section class="top">
-    <div class="kicker">SSULMO · 시안 v6 · 창업 매칭 + PC·모바일 + 새 디자인 · 2026-10-08</div>
+    <div class="kicker">SSULMO · 시안 v7 · 창업 매칭 + PC·모바일 + 새 디자인 · 2026-10-08</div>
     <h1>창업자에게 맞는 공실을 찾아주는 흐름</h1>
     <p>처음 질문은 하나예요. <b>사업 아이템이 정해졌나요?</b> 정했으면 그 업종으로 동네 의견을 받은 공실을 추천하고, 아직이면 원하는 지역의 공실과 그곳에서 가장 원하는 업종을 보여줘요.</p>
     <p>같은 주소가 PC에서는 PC 화면으로, 휴대폰에서는 모바일 화면으로 열려요. 아래에 두 가지를 모두 그렸어요. 글자 크기는 황금비(1 : 1.618)로 커지고, 본문 줄 간격도 1.618이에요. 포인트 색은 파스텔 노랑과 연두예요.</p>
-    <p><b>v5에서 바뀐 점:</b> 모바일 화면을 추가했어요. 한 화면에 7개가 넘는 선택지는 카테고리 카드로 묶었어요(밀러의 법칙). 줄바꿈은 항상 단어 단위로 해요. 강조 표시는 형광펜 대신 마우스로 드래그해 선택한 것 같은 모양이에요(예: <mark style="background:#ffe98a;color:#1d1d1b">이 부분처럼</mark>).</p>
+    <p><b>v5에서 바뀐 점:</b> 모바일 화면을 추가했어요. 한 화면에 7개가 넘는 선택지는 카테고리 카드로 묶었어요(밀러의 법칙). 줄바꿈은 항상 단어 단위로 해요. 강조 표시는 형광펜 대신 마우스로 드래그해 선택한 것 같은 모양이에요(예: <mark style="background:rgba(255,221,87,.45);color:#1d1d1b">이 부분처럼</mark>).</p>
     <div class="qs">
+      <div><span class="tag">v7</span> 하이라이트를 <b>반투명</b>(노랑 45%)으로 바꾸고, 모든 카드 테두리를 <b>1px 얇은 선</b>으로 바꿨어요. 1순위 카드는 굵은 테두리 대신 연두 1px 선이에요.</div>
       <div><span class="tag">v6</span> <b>하이라이트는 화면당 한 곳, 제목에만</b> 써요. 수치 문구에서는 바탕색을 빼고 진한 글자로만 강조해요. 연두는 막대 그래프와 1순위 카드 테두리에만 써요. 글꼴은 전부 <b>Noto Sans KR</b>이에요.</div>
       <div><span class="tag">확정</span> 휴대폰은 모바일 화면, PC는 PC 화면 · 추천 순서는 <b>이용 의향 인원이 많은 순</b> · 수치는 “응답자 N명 중 M명이 이용 의향” 고정 문구 · 50명 미만은 “집계 중”.</div>
       <div><span class="tag">구현 시 바뀌는 것</span> 지역으로 찾으려면 공실에 <b>구(區) 칸</b>이 따로 있어야 해요. 관리자 공실 등록 화면(A3)에 “구 선택”이 추가돼요.</div>
@@ -384,7 +385,7 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans); paddin
     </div></div>
     <ul class="notes">
       <li>순서는 <b>이용 의향 인원(M)이 많은 순</b>이에요. 비율 순으로 바꿀 수도 있어요. 예: 120명 중 41명(34%) vs 60명 중 15명(25%).</li>
-      <li>1순위 카드에는 연두 테두리를 둘렀어요. 수치 문구는 바탕색 없이 진한 글자로만 강조하고, 문구는 고정 규칙인 “응답자 N명 중 M명이 이용 의향” 그대로예요.</li>
+      <li>1순위 카드에는 얇은 연두 테두리를 둘렀어요. 수치 문구는 바탕색 없이 진한 글자로만 강조하고, 문구는 고정 규칙인 “응답자 N명 중 M명이 이용 의향” 그대로예요.</li>
       <li>그 업종을 고른 사람이 한 명도 없는 공실은 추천에서 빠져요.</li>
       <li>한 화면에는 추천 카드를 <b>최대 3장</b>까지만 보여주고, 나머지는 “더 보기”로 펼쳐요.</li>
     </ul>
