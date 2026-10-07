@@ -65,3 +65,8 @@ export async function listSpaces(db: D1Database): Promise<Array<Space & { respon
     .all<Space & { response_count: number }>();
   return results;
 }
+
+export async function listPublicSpaces(db: D1Database): Promise<Space[]> {
+  const { results } = await db.prepare("SELECT * FROM spaces WHERE owner_consent = 1 ORDER BY id DESC").all<Space>();
+  return results;
+}

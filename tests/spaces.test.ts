@@ -1,7 +1,7 @@
 // tests/spaces.test.ts
 import { describe, expect, it } from "vitest";
 import { createTestDb } from "./helpers/d1";
-import { createSpace, getPublicSpace, getSpace, listSpaces, parseSpaceForm, setOwnerConsent, slugTaken } from "~/lib/spaces.server";
+import { createSpace, getPublicSpace, getSpace, listPublicSpaces, listSpaces, parseSpaceForm, setOwnerConsent, slugTaken } from "~/lib/spaces.server";
 
 const form = (entries: Record<string, string>) => {
   const f = new FormData();
@@ -40,5 +40,14 @@ describe("spaces repository", () => {
     const spaces = await listSpaces(db);
     expect(spaces).toHaveLength(1);
     expect(spaces[0].response_count).toBe(0);
+  });
+});
+
+describe("listPublicSpaces", () => {
+  it("lists only consented spaces", async () => {
+    const db = createTestDb();
+    await createSpace(db, { name: "공개", neighborhood: "n", slug: "open-one", ownerConsent: true, consentFileKey: null });
+    await createSpace(db, { name: "비공개", neighborhood: "n", slug: "hidden-one", ownerConsent: false, consentFileKey: null });
+    expect((await listPublicSpaces(db)).map((s) => s.slug)).toEqual(["open-one"]);
   });
 });
