@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #111111;
+  --color-paper: #ffffff;
+  --color-muted: #6b6b6b;
+  --color-line: #e6e6e6;
+  --color-accent: #ff5a1f;
+  --font-sans: "Pretendard Variable", Pretendard, system-ui, -apple-system, sans-serif;
+}
+
+html,
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+}
