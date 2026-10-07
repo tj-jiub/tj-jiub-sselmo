@@ -1,0 +1,729 @@
+<title>썰모 화면 시안</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: review board — public phone screens in a wrapping row, admin screens as wide browser frames below. */
+:root {
+  --bg: #efeeec;
+  --fg: #151515;
+  --muted: #6e6c69;
+  --rule: #d6d4d0;
+  --accent: #ff5a1f;
+  --frame: #1b1b1b;
+  --note-bg: #ffffff;
+  /* App palette: mirrors the real app, which is light-only. */
+  --a-ink: #111111;
+  --a-paper: #ffffff;
+  --a-muted: #6b6b6b;
+  --a-line: #e6e6e6;
+  --a-accent: #ff5a1f;
+  --sans: "Noto Sans KR", system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #161615; --fg: #ecebe8; --muted: #9b9994; --rule: #2e2d2b; --frame: #000000; --note-bg: #1f1f1d;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #161615; --fg: #ecebe8; --muted: #9b9994; --rule: #2e2d2b; --frame: #000000; --note-bg: #1f1f1d;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); padding-inline: 16px; padding-block: 40px 80px; }
+.board { max-width: 1240px; margin: 0 auto; }
+
+.top { max-width: 68ch; }
+.top .kicker { font-family: var(--mono); font-size: 12px; color: var(--accent); letter-spacing: .08em; }
+.top h1 { font-size: 30px; line-height: 1.25; margin: 8px 0 12px; text-wrap: balance; }
+.top p { font-size: 15px; line-height: 1.7; color: var(--muted); margin: 0 0 8px; }
+.open { margin-top: 20px; border-top: 1px solid var(--rule); padding-top: 16px; display: grid; gap: 6px; font-size: 14px; line-height: 1.6; }
+.open b { color: var(--fg); }
+.tag { font-family: var(--mono); font-size: 11.5px; color: var(--accent); }
+
+.group-title { display: flex; align-items: baseline; gap: 12px; margin: 56px 0 20px; border-bottom: 1px solid var(--rule); padding-bottom: 10px; }
+.group-title h2 { font-size: 18px; margin: 0; }
+.group-title span { font-size: 13px; color: var(--muted); }
+
+.row { display: flex; flex-wrap: wrap; gap: 36px 28px; align-items: flex-start; }
+.screen { width: min(340px, 100%); display: grid; gap: 12px; min-width: 0; }
+.screen.wide { width: 100%; max-width: 980px; }
+.label { display: flex; gap: 8px; align-items: baseline; }
+.label .id { font-family: var(--mono); font-size: 12px; color: var(--accent); }
+.label .name { font-size: 14px; font-weight: 700; }
+.notes { margin: 0; padding: 12px 14px 12px 30px; background: var(--note-bg); border: 1px solid var(--rule); border-radius: 8px; font-size: 12.5px; line-height: 1.6; color: var(--muted); }
+.notes li + li { margin-top: 2px; }
+.notes b { color: var(--fg); font-weight: 500; }
+
+/* Device frames */
+.phone { border: 9px solid var(--frame); border-radius: 30px; overflow: hidden; background: var(--a-paper); }
+.browser { border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; background: var(--a-paper); }
+.url { font-family: var(--mono); font-size: 11px; color: var(--a-muted); background: #f4f4f4; padding: 8px 14px; border-bottom: 1px solid var(--a-line); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.browser .url::before { content: "● ● ●  "; color: #cfcfcf; letter-spacing: 2px; }
+
+/* ---------- App UI (what users will actually see) ---------- */
+.app { color: var(--a-ink); font-family: var(--sans); font-size: 15px; line-height: 1.5; }
+.app .wrap { padding: 28px 18px 32px; }
+.app .wrap.wide { padding: 28px 28px 36px; }
+.app .eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .14em; color: var(--a-accent); }
+.app h3.h { font-size: 21px; line-height: 1.38; font-weight: 700; margin: 6px 0 0; text-wrap: balance; }
+.app .sub { font-size: 13px; color: var(--a-muted); margin: 8px 0 0; }
+.app header.t { margin-bottom: 28px; }
+.app fieldset { border: 0; margin: 0 0 26px; padding: 0; min-width: 0; }
+.app legend { font-weight: 700; font-size: 15px; padding: 0; }
+.app .hint { font-size: 12px; color: var(--a-muted); margin: 2px 0 0; }
+.app .pills { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 11px; }
+.app .pill { position: relative; cursor: pointer; }
+.app .pill input { position: absolute; opacity: 0; pointer-events: none; }
+.app .pill span { display: block; border: 1px solid var(--a-line); border-radius: 999px; padding: 7px 13px; font-size: 13px; transition: background .12s, color .12s; }
+.app .pill input:checked + span { background: var(--a-ink); color: var(--a-paper); border-color: var(--a-ink); }
+.app .pill input:focus-visible + span { outline: 2px solid var(--a-accent); outline-offset: 2px; }
+.app .field { display: block; margin-bottom: 18px; }
+.app .field > span { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; }
+.app .input { width: 100%; border: 1px solid var(--a-line); border-radius: 8px; padding: 10px 12px; font: inherit; font-size: 15px; background: var(--a-paper); color: var(--a-ink); }
+.app .input:focus { outline: none; border-color: var(--a-ink); }
+.app textarea.input { min-height: 120px; resize: vertical; }
+.app .file { font-size: 12.5px; color: var(--a-muted); border: 1px dashed var(--a-line); border-radius: 8px; padding: 10px 12px; }
+.app .consent { display: flex; gap: 11px; border: 1px solid var(--a-line); border-radius: 8px; padding: 13px; margin-bottom: 8px; cursor: pointer; }
+.app .consent input { margin-top: 3px; width: 16px; height: 16px; accent-color: var(--a-ink); flex-shrink: 0; }
+.app .consent b { display: block; font-size: 13px; font-weight: 500; }
+.app .consent small { display: block; font-size: 11.5px; color: var(--a-muted); line-height: 1.55; margin-top: 3px; }
+.app .btn { display: block; width: 100%; border: 0; border-radius: 8px; background: var(--a-ink); color: var(--a-paper); font: inherit; font-weight: 700; padding: 13px; text-align: center; text-decoration: none; cursor: pointer; }
+.app .btn.ghost { background: transparent; color: var(--a-ink); border: 1px solid var(--a-ink); }
+.app .btn.sm { display: inline-block; width: auto; padding: 8px 14px; font-size: 13px; }
+.app .err { border: 1px solid var(--a-accent); color: var(--a-accent); border-radius: 8px; padding: 10px 13px; font-size: 13px; margin-bottom: 14px; }
+.app details { border: 1px solid var(--a-line); border-radius: 8px; padding: 13px; margin-bottom: 24px; }
+.app summary { font-size: 13.5px; font-weight: 500; cursor: pointer; }
+.app details[open] summary { margin-bottom: 14px; }
+.app .p { font-size: 13.5px; color: var(--a-muted); line-height: 1.65; margin: 0; }
+.app .sec { margin-bottom: 32px; }
+.app .sec > h4 { font-size: 13px; font-weight: 700; margin: 0 0 10px; padding-bottom: 8px; border-bottom: 1px solid var(--a-ink); }
+.app dl.kv { display: grid; grid-template-columns: 5.5rem 1fr; gap: 6px 0; margin: 0; font-size: 13.5px; }
+.app dl.kv dt { color: var(--a-muted); }
+.app dl.kv dd { margin: 0; }
+.app ul.list { list-style: none; margin: 0; padding: 0; }
+.app ul.list > li { border-bottom: 1px solid var(--a-line); padding: 11px 0; }
+.app ul.list > li:last-child { border-bottom: 0; }
+.app .rank-type { font-weight: 700; font-size: 15px; }
+.app .rank-line { font-size: 13px; color: var(--a-muted); margin-top: 2px; }
+.app .bar { height: 4px; background: var(--a-line); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+.app .bar i { display: block; height: 100%; background: var(--a-ink); }
+.app .bar.top i { background: var(--a-accent); }
+.app .pending { text-align: center; padding: 64px 0; font-size: 19px; font-weight: 700; }
+.app .pending small { display: block; font-size: 12.5px; font-weight: 400; color: var(--a-muted); margin-top: 8px; }
+.app .nav { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--a-line); padding: 12px 28px; font-size: 13px; }
+.app .nav b { font-size: 14px; }
+.app .nav span { color: var(--a-muted); }
+.app .between { display: flex; justify-content: space-between; gap: 12px; align-items: center; flex-wrap: wrap; }
+.app .muted { color: var(--a-muted); }
+.app .tbl-wrap { overflow-x: auto; }
+.app table { width: 100%; min-width: 560px; border-collapse: collapse; font-size: 13px; }
+.app th { text-align: left; font-weight: 500; font-size: 11.5px; color: var(--a-muted); padding: 6px 8px 6px 0; }
+.app td { padding: 10px 8px 10px 0; border-top: 1px solid var(--a-line); font-variant-numeric: tabular-nums; }
+.app td a, .app .link { color: var(--a-ink); text-decoration: underline; text-underline-offset: 3px; }
+.app .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 20px 28px; }
+.app .mini h5 { font-size: 11.5px; color: var(--a-muted); font-weight: 500; margin: 0 0 6px; }
+.app .mini div { display: flex; justify-content: space-between; font-size: 13px; padding: 3px 0; font-variant-numeric: tabular-nums; }
+.app .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.app .chips span { border: 1px solid var(--a-line); border-radius: 999px; padding: 4px 11px; font-size: 12.5px; }
+.app .qr { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.app .qr-box { width: 112px; height: 112px; border: 1px solid var(--a-line); padding: 6px; background: #fff; }
+.app .qr-box canvas, .app .qr-box img { width: 100% !important; height: 100% !important; display: block; }
+.app .urls { font-size: 12.5px; line-height: 1.8; word-break: break-all; margin-top: 14px; }
+.app .urls span { color: var(--a-muted); display: inline-block; width: 4.5rem; }
+.app .check { display: flex; gap: 8px; align-items: center; font-size: 13.5px; margin-bottom: 14px; }
+.app .check input { width: 16px; height: 16px; accent-color: var(--a-ink); }
+.app .inline-form { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+.app .inline-form .field { margin: 0; }
+.app .blocked { font-size: 13px; color: var(--a-muted); border: 1px dashed var(--a-line); border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+.app .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 0 36px; }
+.app .two > * { min-width: 0; }
+.app .role { display: block; border: 1px solid var(--a-ink); border-radius: 10px; padding: 16px; color: var(--a-ink); text-decoration: none; }
+.app .role:hover { background: #f6f6f6; }
+.app .role b { display: block; font-size: 16px; }
+.app .role small { display: block; font-size: 12.5px; color: var(--a-muted); margin-top: 3px; }
+.app .result { border: 1px solid var(--a-ink); border-radius: 10px; padding: 16px; margin-bottom: 28px; }
+.app .result .verdict { font-size: 12px; font-weight: 700; color: var(--a-accent); letter-spacing: .04em; }
+.app .result p { margin: 6px 0 0; font-size: 14px; line-height: 1.65; }
+.app .price { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.app .copy { display: flex; gap: 8px; align-items: center; font-size: 12.5px; word-break: break-all; background: #f6f6f6; border-radius: 8px; padding: 10px 12px; }
+.app .copy .btn { flex-shrink: 0; }
+.app .disabled { opacity: .45; pointer-events: none; }
+
+@media (prefers-reduced-motion: reduce) { .app .pill span { transition: none; } }
+</style>
+
+<div class="board">
+
+  <section class="top">
+    <div class="kicker">SSULMO · 화면 시안 v3 · 2026-10-08</div>
+    <h1>썰모 시제품, 구현 전에 화면부터 확인해요</h1>
+    <p>모바일 웹이에요. 앱 설치 없이 QR을 찍으면 휴대폰 브라우저에서 바로 열려요. 칩과 체크박스는 눌러볼 수 있어요. 데이터는 모두 예시예요.</p>
+    <p><b>v2에서 바뀐 점:</b> 첫 화면에 역할 선택(P0)과 공실 선택(P0-1)을 추가했어요. 창업 신청은 무료가 됐어요(P6, P7). 검토 결과는 이메일 링크로 받고, 서면 피드백은 원하는 사람만 1만원에 신청해요(P8, P9). 관리자 화면 A2와 A5도 이 흐름에 맞췄어요.</p>
+    <p>고칠 곳은 채팅에 <b>화면 번호 + 바꿀 내용</b>으로 알려주세요. 예: “P1 업종 선택지에 ‘술집’ 추가”, “P5 막대 그래프 빼줘”.</p>
+    <div class="open">
+      <div><span class="tag">TODO(survey)</span> <b>설문 문항은 임시예요.</b> 같이 정하기로 한 부분이라, P1의 질문·선택지는 자유롭게 바꿔도 돼요. “왜 이 자리가 오래 비어 있을까요?” 같은 주관식도 넣을 수 있어요.</div>
+      <div><span class="tag">TODO(legal)</span> <b>동의 문구와 계좌번호는 임시 값이에요.</b> 법적 검토 전이라 확정하지 않았어요.</div>
+      <div><span class="tag">확정</span> <b>검토 결과</b>는 한 줄 판정과 짧은 요약이에요(무료). 자세한 내용은 유료 서면 피드백에 담겨요. <b>결과 메일</b>은 관리자가 링크를 복사해 직접 보내요.</div>
+    </div>
+  </section>
+
+  <!-- ================= PUBLIC ================= -->
+  <div class="group-title"><h2>공개 화면</h2><span>휴대폰 · 로그인 없음 · 건물주 동의가 없는 공간이면 모두 404</span></div>
+
+  <div class="row">
+
+    <!-- P0 Role select -->
+    <article class="screen" id="p0">
+      <div class="label"><span class="id">P0</span><span class="name">첫 화면 · 역할 선택</span></div>
+      <div class="phone"><div class="url">ssulmo.app</div>
+        <div class="app"><div class="wrap">
+          <header class="t">
+            <div class="eyebrow">SSULMO</div>
+            <h3 class="h">비어 있는 가게 자리에 어떤 가게가 필요한지, 동네가 알려줘요</h3>
+          </header>
+          <div style="display:grid;gap:10px;margin-bottom:28px">
+            <a class="role" href="#p0-1"><b>창업하고 싶어요</b><small>모집 중인 공실을 보고 창업을 신청해요. 신청은 무료예요.</small></a>
+            <a class="role" href="#a1"><b>관리자예요</b><small>공실 등록, 수요 리포트, 신청 검토</small></a>
+          </div>
+          <p class="p" style="font-size:12.5px">동네 주민이라면 가게 앞에 붙은 QR을 찍어 의견을 남겨 주세요.</p>
+        </div></div>
+      </div>
+      <ul class="notes">
+        <li>지금은 <b>신청자 / 관리자</b> 두 갈래예요. 주민은 QR로 설문(P1)에 바로 들어오니까 여기서는 안내만 해요.</li>
+        <li>관리자 버튼을 일반 사용자에게 크게 보여줄지 정해야 해요. 맨 아래 작은 링크로 숨기는 경우가 많아요.</li>
+      </ul>
+    </article>
+
+    <!-- P0-1 Space list -->
+    <article class="screen" id="p0-1">
+      <div class="label"><span class="id">P0-1</span><span class="name">신청자 · 공실 선택</span></div>
+      <div class="phone"><div class="url">ssulmo.app/spaces</div>
+        <div class="app"><div class="wrap">
+          <header class="t">
+            <div class="eyebrow">창업 신청</div>
+            <h3 class="h">어느 자리에 창업하고 싶나요?</h3>
+            <p class="sub">동네 의견이 모이고 있는 공실이에요.</p>
+          </header>
+          <ul class="list" style="margin-bottom:8px">
+            <li>
+              <div class="between"><b>망원동 1층 코너 공실</b><span class="muted" style="font-size:12.5px">의견 60건</span></div>
+              <div class="muted" style="font-size:12.5px;margin-top:2px">마포구 망원동 · 1위 아이스크림·디저트</div>
+              <div style="display:flex;gap:8px;margin-top:10px"><a class="btn ghost sm" href="#p5">동네 의견 보기</a><a class="btn sm" href="#p6">신청하기</a></div>
+            </li>
+            <li>
+              <div class="between"><b>연남동 2층 공실</b><span class="muted" style="font-size:12.5px">집계 중</span></div>
+              <div class="muted" style="font-size:12.5px;margin-top:2px">마포구 연남동</div>
+              <div style="display:flex;gap:8px;margin-top:10px"><a class="btn ghost sm" href="#p4">동네 의견 보기</a><a class="btn sm" href="#p6">신청하기</a></div>
+            </li>
+          </ul>
+        </div></div>
+      </div>
+      <ul class="notes">
+        <li>건물주 동의가 된 공실만 보여요. 임대료 같은 계약 조건은 표시하지 않아요.</li>
+        <li>의견이 50건 미만인 곳은 숫자 대신 <b>“집계 중”</b>으로 표시해요.</li>
+        <li>지시서에서 지도·검색은 범위 밖이라 단순 목록이에요.</li>
+      </ul>
+    </article>
+
+    <!-- P1 Survey -->
+    <article class="screen" id="p1">
+      <div class="label"><span class="id">P1</span><span class="name">수요 설문</span></div>
+      <div class="phone"><div class="url">ssulmo.app/s/mangwon-01</div>
+        <div class="app"><div class="wrap">
+          <header class="t">
+            <div class="eyebrow">마포구 망원동</div>
+            <h3 class="h">망원동 1층 코너 공실에 어떤 가게가 생기면 좋을까요?</h3>
+            <p class="sub">30초면 끝나요. 이름은 묻지 않아요.</p>
+          </header>
+          <form onsubmit="event.preventDefault()">
+            <fieldset><legend>생기면 이용할 가게</legend><p class="hint">최대 3개</p>
+              <div class="pills">
+                <label class="pill"><input type="checkbox" id="p1-t1"><span>카페</span></label>
+                <label class="pill"><input type="checkbox" id="p1-t2"><span>베이커리</span></label>
+                <label class="pill"><input type="checkbox" id="p1-t3" checked><span>아이스크림·디저트</span></label>
+                <label class="pill"><input type="checkbox" id="p1-t4"><span>분식</span></label>
+                <label class="pill"><input type="checkbox" id="p1-t5" checked><span>반찬가게</span></label>
+                <label class="pill"><input type="checkbox" id="p1-t6"><span>세탁소</span></label>
+                <label class="pill"><input type="checkbox" id="p1-t7"><span>꽃집</span></label>
+                <label class="pill"><input type="checkbox" id="p1-t8"><span>공방</span></label>
+                <label class="pill"><input type="checkbox" id="p1-t9"><span>스터디카페</span></label>
+                <label class="pill"><input type="checkbox" id="p1-t10"><span>필라테스·요가</span></label>
+                <label class="pill"><input type="checkbox" id="p1-t11"><span>기타</span></label>
+              </div>
+            </fieldset>
+            <label class="field"><span>기타를 골랐다면 적어 주세요</span><input class="input" id="p1-other" placeholder="예: 아이스크림집"></label>
+            <fieldset><legend>얼마나 자주 갈 것 같나요?</legend>
+              <div class="pills">
+                <label class="pill"><input type="radio" name="p1f" id="p1-f1"><span>주 3회 이상</span></label>
+                <label class="pill"><input type="radio" name="p1f" id="p1-f2" checked><span>주 1~2회</span></label>
+                <label class="pill"><input type="radio" name="p1f" id="p1-f3"><span>월 1~3회</span></label>
+                <label class="pill"><input type="radio" name="p1f" id="p1-f4"><span>가끔</span></label>
+              </div>
+            </fieldset>
+            <fieldset><legend>한 번에 쓸 것 같은 금액</legend>
+              <div class="pills">
+                <label class="pill"><input type="radio" name="p1s" id="p1-s1"><span>5천원 미만</span></label>
+                <label class="pill"><input type="radio" name="p1s" id="p1-s2" checked><span>5천~1만원</span></label>
+                <label class="pill"><input type="radio" name="p1s" id="p1-s3"><span>1만~2만원</span></label>
+                <label class="pill"><input type="radio" name="p1s" id="p1-s4"><span>2만원 이상</span></label>
+              </div>
+            </fieldset>
+            <fieldset><legend>주로 가는 시간대</legend>
+              <div class="pills">
+                <label class="pill"><input type="radio" name="p1v" id="p1-v1"><span>오전</span></label>
+                <label class="pill"><input type="radio" name="p1v" id="p1-v2"><span>점심</span></label>
+                <label class="pill"><input type="radio" name="p1v" id="p1-v3" checked><span>오후</span></label>
+                <label class="pill"><input type="radio" name="p1v" id="p1-v4"><span>저녁</span></label>
+                <label class="pill"><input type="radio" name="p1v" id="p1-v5"><span>밤</span></label>
+              </div>
+            </fieldset>
+            <fieldset><legend>나는</legend>
+              <div class="pills">
+                <label class="pill"><input type="radio" name="p1r" id="p1-r1" checked><span>주민</span></label>
+                <label class="pill"><input type="radio" name="p1r" id="p1-r2"><span>직장인</span></label>
+                <label class="pill"><input type="radio" name="p1r" id="p1-r3"><span>학생</span></label>
+                <label class="pill"><input type="radio" name="p1r" id="p1-r4"><span>지나가는 길</span></label>
+              </div>
+            </fieldset>
+            <details>
+              <summary>가게가 생기면 소식 받기 (선택)</summary>
+              <label class="field"><span>연락처 (전화번호 또는 이메일)</span><input class="input" id="p1-contact"></label>
+              <label class="consent"><input type="checkbox" id="p1-cc"><span><b>[선택] 개인정보 수집·이용 동의</b><small>수집 항목: 연락처 · 목적: 이 자리에 가게가 생기면 소식 전달 · 보유 기간: 목적 달성 후 즉시 파기</small></span></label>
+            </details>
+            <button type="submit" class="btn">제출하기</button>
+          </form>
+        </div></div>
+      </div>
+      <ul class="notes">
+        <li><b>질문은 5개</b>이고, 모두 칩을 눌러 답해요.</li>
+        <li>업종을 4개 고르면 제출할 때 안내 문구가 떠요. 4번째를 아예 못 누르게 막을 수도 있어요.</li>
+        <li>연락처는 접어둔 선택 항목이에요. 설문 답변과 <b>따로 저장</b>해서 서로 연결되지 않아요.</li>
+      </ul>
+    </article>
+
+    <!-- P2 Done -->
+    <article class="screen" id="p2">
+      <div class="label"><span class="id">P2</span><span class="name">제출 완료</span></div>
+      <div class="phone"><div class="url">ssulmo.app/s/mangwon-01</div>
+        <div class="app"><div class="wrap">
+          <header class="t">
+            <div class="eyebrow">마포구 망원동</div>
+            <h3 class="h">응답이 저장됐어요. 고마워요!</h3>
+          </header>
+          <p class="p">응답이 50명 이상 모이면 결과를 공개해요.</p>
+          <div style="height:28px"></div>
+          <a class="btn ghost" href="#p4">결과 보러 가기</a>
+        </div></div>
+      </div>
+      <ul class="notes">
+        <li>“결과 보러 가기”를 누르면 P4 또는 P5로 가요.</li>
+        <li>여기서 창업 신청(P6)으로 바로 보내는 버튼을 넣을지 정해야 해요. 지금은 넣지 않았어요.</li>
+      </ul>
+    </article>
+
+    <!-- P3 Cooldown -->
+    <article class="screen" id="p3">
+      <div class="label"><span class="id">P3</span><span class="name">이미 응답함 (24시간 제한)</span></div>
+      <div class="phone"><div class="url">ssulmo.app/s/mangwon-01</div>
+        <div class="app"><div class="wrap">
+          <header class="t">
+            <div class="eyebrow">마포구 망원동</div>
+            <h3 class="h">이미 응답하셨어요.</h3>
+          </header>
+          <p class="p">같은 기기에서는 24시간에 한 번 참여할 수 있어요.</p>
+          <div style="height:28px"></div>
+          <a class="btn ghost" href="#p4">결과 보러 가기</a>
+        </div></div>
+      </div>
+      <ul class="notes">
+        <li>브라우저 쿠키로 기기를 구분해요. 쿠키를 지우면 다시 참여할 수 있어서 시제품 수준의 제한이에요.</li>
+      </ul>
+    </article>
+
+    <!-- P4 Public pending -->
+    <article class="screen" id="p4">
+      <div class="label"><span class="id">P4</span><span class="name">공개 요약 · 50명 미만</span></div>
+      <div class="phone"><div class="url">ssulmo.app/r/mangwon-01</div>
+        <div class="app"><div class="wrap">
+          <header class="t">
+            <div class="eyebrow">마포구 망원동</div>
+            <h3 class="h">망원동 1층 코너 공실, 동네가 원하는 가게</h3>
+          </header>
+          <div class="pending">집계 중</div>
+          <a class="btn" href="#p6">이 자리에 창업 신청하기</a>
+        </div></div>
+      </div>
+      <ul class="notes">
+        <li>지시서대로 <b>“집계 중”만</b> 보여줘요. 현재 응답 수도 숨겨요.</li>
+        <li>“몇 명 더 모이면 공개돼요” 같은 진행 표시를 넣을지 정해야 해요.</li>
+      </ul>
+    </article>
+
+    <!-- P5 Public ready -->
+    <article class="screen" id="p5">
+      <div class="label"><span class="id">P5</span><span class="name">공개 요약 · 50명 이상</span></div>
+      <div class="phone"><div class="url">ssulmo.app/r/mangwon-01</div>
+        <div class="app"><div class="wrap">
+          <header class="t">
+            <div class="eyebrow">마포구 망원동</div>
+            <h3 class="h">망원동 1층 코너 공실, 동네가 원하는 가게</h3>
+          </header>
+          <ul class="list" style="margin-bottom:32px">
+            <li><div class="rank-type">아이스크림·디저트</div><div class="rank-line">응답자 60명 중 27명이 이용 의향</div><div class="bar top"><i style="width:45%"></i></div></li>
+            <li><div class="rank-type">카페</div><div class="rank-line">응답자 60명 중 22명이 이용 의향</div><div class="bar"><i style="width:36.7%"></i></div></li>
+            <li><div class="rank-type">베이커리</div><div class="rank-line">응답자 60명 중 15명이 이용 의향</div><div class="bar"><i style="width:25%"></i></div></li>
+            <li><div class="rank-type">반찬가게</div><div class="rank-line">응답자 60명 중 12명이 이용 의향</div><div class="bar"><i style="width:20%"></i></div></li>
+            <li><div class="rank-type">분식</div><div class="rank-line">응답자 60명 중 6명이 이용 의향</div><div class="bar"><i style="width:10%"></i></div></li>
+          </ul>
+          <a class="btn" href="#p6">이 자리에 창업 신청하기</a>
+        </div></div>
+      </div>
+      <ul class="notes">
+        <li>문구는 <b>“응답자 N명 중 M명이 이용 의향”</b>으로 고정했어요.</li>
+        <li>계획서에는 없던 <b>얇은 막대</b>를 시안에 추가했어요. 1위만 강조색이에요. 필요 없으면 빼면 돼요.</li>
+        <li>“기타”에 적힌 글은 공개하지 않고 관리자 화면에서만 보여요.</li>
+      </ul>
+    </article>
+
+    <!-- P6 Apply -->
+    <article class="screen" id="p6">
+      <div class="label"><span class="id">P6</span><span class="name">창업 신청 (무료)</span></div>
+      <div class="phone"><div class="url">ssulmo.app/apply/mangwon-01</div>
+        <div class="app"><div class="wrap">
+          <header class="t">
+            <div class="eyebrow">마포구 망원동</div>
+            <h3 class="h">망원동 1층 코너 공실 창업 신청</h3>
+            <p class="sub">신청은 무료예요. 검토가 끝나면 이메일로 결과 링크를 보내드려요.</p>
+          </header>
+          <form onsubmit="event.preventDefault()">
+            <label class="field"><span>하고 싶은 업종</span><input class="input" id="p6-type" placeholder="예: 젤라또 가게"></label>
+            <label class="field"><span>사업계획</span><textarea class="input" id="p6-plan" placeholder="누구에게, 무엇을, 어떻게 팔지 자유롭게 적어 주세요."></textarea></label>
+            <div class="field"><span>사업계획서 파일 (선택, 10MB 이하)</span><div class="file">파일 선택 · PDF, 한글, 워드, 이미지</div></div>
+            <label class="field"><span>예상 창업 비용 (만원)</span><input class="input" id="p6-cost" inputmode="numeric" placeholder="예: 4500"></label>
+            <label class="field"><span>이름</span><input class="input" id="p6-name"></label>
+            <label class="field"><span>이메일 (결과 링크를 받을 주소)</span><input class="input" id="p6-email" type="email" placeholder="name@example.com"></label>
+            <div style="margin:24px 0 28px">
+              <label class="consent"><input type="checkbox" id="p6-c1"><span><b>[필수] 개인정보 수집·이용 동의</b><small>수집 항목: 이름, 이메일, 사업계획 · 목적: 신청 검토 및 결과 안내 · 보유 기간: 검토 완료 후 1년</small></span></label>
+              <label class="consent"><input type="checkbox" id="p6-c3"><span><b>[필수] 중개사 소개는 별도 동의가 있을 때만 이뤄져요</b><small>아래 [선택] 항목에 동의하지 않으면 어떤 중개사에게도 신청 정보가 전달되지 않아요.</small></span></label>
+              <label class="consent"><input type="checkbox" id="p6-c4"><span><b>[선택] 공인중개사 소개를 원해요</b><small>동의하면 이 공간을 담당하는 공인중개사에게 이름과 이메일을 전달할 수 있어요. 언제든 철회할 수 있어요.</small></span></label>
+            </div>
+            <button type="submit" class="btn">무료로 신청하기</button>
+          </form>
+        </div></div>
+      </div>
+      <ul class="notes">
+        <li>신청 단계에서는 <b>돈 이야기가 없어요.</b> 신청비 안내와 계좌 정보는 뺐어요.</li>
+        <li>결과 링크를 보내야 해서 연락처를 <b>이메일 하나</b>로 바꿨어요. 전화번호는 받지 않아요.</li>
+        <li>필수 동의가 3개에서 2개로 줄었어요. 피드백 이용료 동의는 실제로 돈을 낼 때(P8) 받아요.</li>
+        <li><span class="tag">TODO(legal)</span> 중개 소개 동의를 신청서에서 함께 받아도 되는지 확인이 필요해요.</li>
+      </ul>
+    </article>
+
+    <!-- P7 Apply done -->
+    <article class="screen" id="p7">
+      <div class="label"><span class="id">P7</span><span class="name">신청 완료</span></div>
+      <div class="phone"><div class="url">ssulmo.app/apply/mangwon-01</div>
+        <div class="app"><div class="wrap">
+          <header class="t">
+            <div class="eyebrow">마포구 망원동</div>
+            <h3 class="h">신청이 접수됐어요</h3>
+          </header>
+          <p class="p">검토가 끝나면 <b style="color:var(--a-ink)">name@example.com</b>으로 결과 링크를 보내드려요.</p>
+          <p class="p" style="margin-top:10px">메일이 오지 않으면 스팸함도 확인해 주세요.</p>
+          <div style="height:28px"></div>
+          <a class="btn ghost" href="#p5">동네 의견 다시 보기</a>
+        </div></div>
+      </div>
+      <ul class="notes">
+        <li>검토에 며칠이 걸리는지 적을지 정해야 해요(예: “보통 7일 안에”).</li>
+      </ul>
+    </article>
+
+    <!-- P8 Result -->
+    <article class="screen" id="p8">
+      <div class="label"><span class="id">P8</span><span class="name">결과 페이지 (메일 링크로 열림)</span></div>
+      <div class="phone"><div class="url">ssulmo.app/result/k3f9…x2</div>
+        <div class="app"><div class="wrap">
+          <header class="t">
+            <div class="eyebrow">망원동 1층 코너 공실</div>
+            <h3 class="h">김예시님, 검토 결과가 나왔어요</h3>
+          </header>
+          <div class="result">
+            <div class="verdict">보완하면 좋아요</div>
+            <p>아이스크림·디저트 수요는 이 공간에서 1위예요. 다만 응답자의 절반이 1회 1만원 미만을 쓴다고 답해서, 계획서의 객단가를 다시 볼 필요가 있어요.</p>
+          </div>
+          <div class="sec">
+            <h4>서면 피드백 받기 (선택)</h4>
+            <div class="price">10,000원</div>
+            <p class="p" style="margin-top:8px">동네 설문 결과를 바탕으로 사업계획서를 항목별로 짚은 피드백 문서를 이메일로 보내드려요.</p>
+            <ul class="p" style="padding-left:18px;margin:10px 0 16px;font-size:12.5px">
+              <li>업종·가격·시간대가 동네 수요와 맞는지</li>
+              <li>사업계획서에서 보완할 부분</li>
+            </ul>
+            <label class="consent"><input type="checkbox" id="p8-c"><span><b>[필수] 사업계획서 검토 및 피드백 서비스 이용료예요</b><small>임대차 계약 체결과 관계없으며, 입점이나 계약을 보장하지 않아요.</small></span></label>
+          </div>
+          <a class="btn" href="#p9">피드백 신청하기</a>
+          <p class="p" style="font-size:12px;text-align:center;margin-top:12px">신청하지 않아도 위 결과는 계속 볼 수 있어요.</p>
+        </div></div>
+      </div>
+      <ul class="notes">
+        <li>로그인 없이 <b>메일 속 링크</b>로만 열려요. 링크 주소는 추측할 수 없는 긴 무작위 값이에요.</li>
+        <li>무료 결과는 <b>한 줄 판정과 짧은 요약</b>이에요. 판정은 잘 맞아요 / 보완하면 좋아요 / 다시 생각해 보세요 중 하나예요.</li>
+        <li>유료 서비스 이름은 계속 “사업계획서 검토 및 피드백 서비스”예요.</li>
+      </ul>
+    </article>
+
+    <!-- P9 Feedback requested -->
+    <article class="screen" id="p9">
+      <div class="label"><span class="id">P9</span><span class="name">피드백 신청 완료 · 입금 안내</span></div>
+      <div class="phone"><div class="url">ssulmo.app/result/k3f9…x2</div>
+        <div class="app"><div class="wrap">
+          <header class="t">
+            <div class="eyebrow">망원동 1층 코너 공실</div>
+            <h3 class="h">피드백 신청이 접수됐어요</h3>
+          </header>
+          <div class="sec">
+            <h4>입금 안내 · 사업계획서 검토 및 피드백 서비스</h4>
+            <dl class="kv"><dt>금액</dt><dd><b>10,000원</b></dd><dt>입금 계좌</dt><dd>OO은행 000-000000-00-000</dd><dt>예금주</dt><dd>썰모</dd></dl>
+            <p class="p" style="font-size:12px;margin-top:10px">입금자명은 신청서의 이름(김예시)과 같게 해 주세요. 입금이 확인되면 이메일로 피드백 문서를 보내드려요.</p>
+          </div>
+          <span class="btn ghost">계좌번호 복사</span>
+        </div></div>
+      </div>
+      <ul class="notes">
+        <li>결제 기능 없이 계좌이체 안내만 보여줘요. 관리자가 입금을 확인하고 직접 체크해요(A5).</li>
+        <li>같은 링크로 다시 들어오면 이 화면이 보여요. 피드백을 보낸 뒤에는 “피드백을 보냈어요”로 바뀌어요.</li>
+      </ul>
+    </article>
+
+  </div>
+
+  <!-- ================= ADMIN ================= -->
+  <div class="group-title"><h2>관리자 화면</h2><span>이메일 로그인 · 관리자 1명 · 개인정보는 이 화면들에서만 보여요</span></div>
+
+  <div class="row">
+
+    <!-- A1 Login -->
+    <article class="screen" id="a1">
+      <div class="label"><span class="id">A1</span><span class="name">관리자 로그인</span></div>
+      <div class="phone"><div class="url">ssulmo.app/admin/login</div>
+        <div class="app"><div class="wrap">
+          <header class="t"><div class="eyebrow">ADMIN</div><h3 class="h">관리자 로그인</h3></header>
+          <label class="field"><span>이메일</span><input class="input" id="a1-email" value="admin@ssulmo.local"></label>
+          <label class="field"><span>비밀번호</span><input class="input" id="a1-pw" type="password" value="password"></label>
+          <div class="err" role="alert">이메일 또는 비밀번호가 맞지 않아요.</div>
+          <button type="button" class="btn">로그인</button>
+        </div></div>
+      </div>
+      <ul class="notes">
+        <li>틀렸을 때 나오는 안내 문구를 함께 보여드려요.</li>
+        <li>관리자는 1명이에요. 이메일과 비밀번호는 서버 설정값으로 관리해요.</li>
+      </ul>
+    </article>
+
+    <!-- A3 New space -->
+    <article class="screen" id="a3">
+      <div class="label"><span class="id">A3</span><span class="name">공간 등록</span></div>
+      <div class="phone"><div class="url">ssulmo.app/admin/spaces/new</div>
+        <div class="app"><div class="wrap">
+          <header class="t"><div class="eyebrow">공간 등록</div><h3 class="h">새 공실 등록</h3><p class="sub">임대료·보증금 등 계약 조건은 입력하지 않아요.</p></header>
+          <label class="field"><span>공간 이름</span><input class="input" id="a3-name" placeholder="예: 망원동 1층 코너 공실"></label>
+          <label class="field"><span>동네 (동 단위까지만)</span><input class="input" id="a3-hood" placeholder="예: 마포구 망원동"></label>
+          <label class="field"><span>주소용 이름 (QR 링크에 쓰여요)</span><input class="input" id="a3-slug" placeholder="mangwon-01"></label>
+          <label class="consent"><input type="checkbox" id="a3-consent"><span><b>건물주 동의를 받았어요</b><small>체크하지 않으면 설문·리포트·신청 링크가 공개되지 않아요. 나중에 공간 화면에서 바꿀 수 있어요.</small></span></label>
+          <div class="field" style="margin-top:14px"><span>건물주 동의서 파일 (선택)</span><div class="file">파일 선택 · PDF, 한글, 워드, 이미지</div></div>
+          <button type="button" class="btn">등록하기</button>
+        </div></div>
+      </div>
+      <ul class="notes">
+        <li>지시서대로 <b>임대료·보증금·계약 조건 칸은 없어요.</b></li>
+        <li><span class="tag">TODO(legal)</span> 건물주 동의를 어떤 형식으로 받아야 충분한지 확인이 필요해요.</li>
+      </ul>
+    </article>
+
+    <!-- A2 Dashboard -->
+    <article class="screen wide" id="a2">
+      <div class="label"><span class="id">A2</span><span class="name">대시보드</span></div>
+      <div class="browser"><div class="url">ssulmo.app/admin</div>
+        <div class="app">
+          <div class="nav"><b>썰모 관리자</b><span>로그아웃</span></div>
+          <div class="wrap wide">
+            <header class="t"><div class="eyebrow">ADMIN</div><h3 class="h">대시보드</h3></header>
+            <div class="sec">
+              <h4>공간</h4>
+              <ul class="list">
+                <li class="between"><span><b>망원동 1층 코너 공실</b> <span class="muted">마포구 망원동</span></span><span class="muted">응답 60 · 공개</span></li>
+                <li class="between"><span><b>연남동 2층 공실</b> <span class="muted">마포구 연남동</span></span><span class="muted">응답 0 · 비공개</span></li>
+              </ul>
+              <div style="margin-top:14px"><span class="btn sm">+ 공간 등록</span></div>
+            </div>
+            <div class="sec">
+              <h4>창업 신청</h4>
+              <div class="tbl-wrap">
+                <table>
+                  <thead><tr><th>신청자 · 업종</th><th>공간</th><th>결과 메일</th><th>피드백 신청</th><th>입금</th><th>피드백</th><th>참고 점수 (참고용)</th></tr></thead>
+                  <tbody>
+                    <tr><td><a href="#a5">김예시 · 젤라또 가게</a></td><td class="muted">망원동 1층 코너 공실</td><td>보냄</td><td>신청</td><td>확인</td><td>발송함</td><td>78</td></tr>
+                    <tr><td><a href="#a5">이예시 · 반찬가게</a></td><td class="muted">망원동 1층 코너 공실</td><td>보냄</td><td>—</td><td>—</td><td>—</td><td>64</td></tr>
+                    <tr><td><a href="#a5">박예시 · 베이커리 카페</a></td><td class="muted">망원동 1층 코너 공실</td><td>검토 중</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <ul class="notes">
+        <li>신청 하나가 <b>검토 → 결과 메일 → (선택) 피드백 신청 → 입금 → 피드백 발송</b> 순서로 진행돼요. 표의 칸도 이 순서예요.</li>
+        <li>참고 점수는 어디서든 <b>“참고용”</b>을 붙여 표시해요. 채점 기준은 나중에 정하기로 했어요.</li>
+      </ul>
+    </article>
+
+    <!-- A4 Space detail -->
+    <article class="screen wide" id="a4">
+      <div class="label"><span class="id">A4</span><span class="name">공간 상세 · 수요 리포트</span></div>
+      <div class="browser"><div class="url">ssulmo.app/admin/spaces/1</div>
+        <div class="app">
+          <div class="nav"><b>썰모 관리자</b><span>로그아웃</span></div>
+          <div class="wrap wide">
+            <header class="t"><div class="eyebrow">마포구 망원동</div><h3 class="h">망원동 1층 코너 공실</h3></header>
+
+            <div class="two">
+              <div class="sec">
+                <h4>건물주 동의</h4>
+                <div class="between" style="font-size:13.5px">
+                  <span>동의 완료 · 링크 공개 중 · <span class="link">동의서 파일</span></span>
+                  <span class="btn ghost sm">동의 취소(비공개로)</span>
+                </div>
+              </div>
+              <div class="sec">
+                <h4>QR · 링크</h4>
+                <div class="qr">
+                  <div class="qr-box" id="qr"></div>
+                  <span class="btn sm">QR 이미지 받기 (PNG)</span>
+                </div>
+                <div class="urls">
+                  <div><span>설문</span>ssulmo.app/s/mangwon-01</div>
+                  <div><span>공개 요약</span>ssulmo.app/r/mangwon-01</div>
+                  <div><span>창업 신청</span>ssulmo.app/apply/mangwon-01</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="sec">
+              <h4>수요 리포트 · 응답 60건</h4>
+              <ul class="list">
+                <li class="between"><b>아이스크림·디저트</b><span>응답자 60명 중 27명이 이용 의향</span></li>
+                <li class="between"><b>카페</b><span>응답자 60명 중 22명이 이용 의향</span></li>
+                <li class="between"><b>베이커리</b><span>응답자 60명 중 15명이 이용 의향</span></li>
+                <li class="between"><b>반찬가게</b><span>응답자 60명 중 12명이 이용 의향</span></li>
+                <li class="between"><b>분식</b><span>응답자 60명 중 6명이 이용 의향</span></li>
+              </ul>
+              <div style="margin:22px 0 8px;font-size:11.5px;color:var(--a-muted)">기타 응답 (원문)</div>
+              <div class="chips"><span>아이스크림집</span><span>수제버거</span><span>문구점</span><span>키즈카페</span><span>무인 사진관</span></div>
+              <div class="grid2" style="margin-top:28px">
+                <div class="mini"><h5>방문 빈도</h5><div><span>주 3회 이상</span><span>11</span></div><div><span>주 1~2회</span><span>24</span></div><div><span>월 1~3회</span><span>17</span></div><div><span>가끔</span><span>8</span></div></div>
+                <div class="mini"><h5>1회 지출</h5><div><span>5천원 미만</span><span>9</span></div><div><span>5천~1만원</span><span>28</span></div><div><span>1만~2만원</span><span>18</span></div><div><span>2만원 이상</span><span>5</span></div></div>
+                <div class="mini"><h5>방문 시간대</h5><div><span>오전</span><span>6</span></div><div><span>점심</span><span>15</span></div><div><span>오후</span><span>21</span></div><div><span>저녁</span><span>14</span></div><div><span>밤</span><span>4</span></div></div>
+                <div class="mini"><h5>응답자 유형</h5><div><span>주민</span><span>31</span></div><div><span>직장인</span><span>16</span></div><div><span>학생</span><span>7</span></div><div><span>지나가는 길</span><span>6</span></div></div>
+              </div>
+            </div>
+
+            <div class="sec">
+              <h4>소식 받기 연락처 1건 (개인정보)</h4>
+              <div style="font-size:13.5px">seed@example.com</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <ul class="notes">
+        <li>관리자 리포트는 응답 수와 관계없이 <b>항상</b> 보여요. 50건 미만이면 “공개 요약은 50건부터 열려요” 안내가 위에 붙어요.</li>
+        <li>QR은 관리자 브라우저에서 만들어서 PNG로 내려받아요. 시안의 QR도 실제로 찍히는 코드예요.</li>
+        <li>업종 순위 외에 방문 빈도·지출·시간대·응답자 유형도 집계했어요. 가게 입점을 판단할 때 쓰라고 넣은 거예요.</li>
+      </ul>
+    </article>
+
+    <!-- A5 Application detail -->
+    <article class="screen wide" id="a5">
+      <div class="label"><span class="id">A5</span><span class="name">신청 상세 · 검토 · 중개 소개 기록</span></div>
+      <div class="browser"><div class="url">ssulmo.app/admin/applications/1</div>
+        <div class="app">
+          <div class="nav"><b>썰모 관리자</b><span>로그아웃</span></div>
+          <div class="wrap wide">
+            <header class="t"><div class="eyebrow">망원동 1층 코너 공실</div><h3 class="h">김예시 · 젤라또 가게</h3><p class="sub">접수 2026. 10. 2. 오후 3:12</p></header>
+            <div class="two">
+              <div>
+                <div class="sec">
+                  <h4>신청 내용 (개인정보)</h4>
+                  <dl class="kv" style="grid-template-columns:7rem 1fr"><dt>이메일</dt><dd>name@example.com</dd><dt>예상 창업 비용</dt><dd>4,500만원</dd><dt>사업계획서 파일</dt><dd><span class="link">내려받기</span></dd></dl>
+                  <p class="p" style="margin-top:12px;border:1px solid var(--a-line);border-radius:8px;padding:12px;color:var(--a-ink)">젤라또 가게 사업계획 예시입니다. 주 고객은 망원동 주민과 직장인입니다.</p>
+                </div>
+                <div class="sec">
+                  <h4>동의 기록</h4>
+                  <div style="font-size:13px;line-height:1.9">개인정보 수집·이용: 2026. 10. 2. 오후 3:12<br>중개 소개 조건 안내: 2026. 10. 2. 오후 3:12<br>중개사 소개 동의: 2026. 10. 2. 오후 3:12<br>피드백 이용료 안내: 2026. 10. 5. 오전 9:40 (피드백 신청 때)</div>
+                </div>
+              </div>
+              <div>
+                <div class="sec">
+                  <h4>1. 검토 결과 (무료)</h4>
+                  <label class="field"><span>한 줄 판정</span>
+                    <span class="pills" style="margin-top:0">
+                      <label class="pill"><input type="radio" name="a5v" id="a5-v1"><span>잘 맞아요</span></label>
+                      <label class="pill"><input type="radio" name="a5v" id="a5-v2" checked><span>보완하면 좋아요</span></label>
+                      <label class="pill"><input type="radio" name="a5v" id="a5-v3"><span>다시 생각해 보세요</span></label>
+                    </span>
+                  </label>
+                  <label class="field"><span>요약 (신청자에게 보여요)</span><textarea class="input" id="a5-sum" style="min-height:90px">아이스크림·디저트 수요는 이 공간에서 1위예요. 다만 응답자의 절반이 1회 1만원 미만을 쓴다고 답해서, 계획서의 객단가를 다시 볼 필요가 있어요.</textarea></label>
+                  <label class="field"><span>참고 점수 (참고용, 0~100 · 신청자에게 안 보여요)</span><input class="input" id="a5-score" value="78" style="width:7rem"></label>
+                  <div class="copy" style="margin-bottom:12px"><span style="flex:1">ssulmo.app/result/k3f9…x2</span><span class="btn ghost sm">링크 복사</span></div>
+                  <div class="between"><label class="check" style="margin:0"><input type="checkbox" id="a5-rs" checked> 결과 메일 보냄 (직접 보낸 뒤 체크)</label><span class="btn sm">저장</span></div>
+                </div>
+                <div class="sec">
+                  <h4>2. 서면 피드백 (유료 · 10,000원)</h4>
+                  <p class="p" style="font-size:13px;margin-bottom:12px">신청자가 결과 페이지에서 피드백을 신청했어요 · 10. 5. 오전 9:40</p>
+                  <label class="check"><input type="checkbox" id="a5-paid" checked> 입금 확인</label>
+                  <label class="field"><span>서면 피드백</span><textarea class="input" id="a5-fb">점심·오후 수요가 높아 테이크아웃 중심이 맞아요. …</textarea></label>
+                  <label class="check"><input type="checkbox" id="a5-sent" checked> 피드백 발송함 (직접 보낸 뒤 체크)</label>
+                  <span class="btn sm">저장</span>
+                  <div style="margin-top:18px;font-size:11.5px;color:var(--a-muted)">피드백을 신청하지 않은 사람은 이 칸 대신 이 문구가 보여요:</div>
+                  <div class="blocked" style="margin-top:6px">아직 피드백을 신청하지 않았어요.</div>
+                </div>
+                <div class="sec">
+                  <h4>중개사 소개 기록</h4>
+                  <div class="inline-form" style="margin-bottom:12px">
+                    <label class="field"><span>중개사 이름</span><input class="input" id="a5-broker"></label>
+                    <label class="field"><span>소개한 날짜</span><input class="input" id="a5-date" type="date"></label>
+                    <span class="btn sm">기록</span>
+                  </div>
+                  <ul class="list"><li class="between"><span>망원 예시 공인중개사</span><span class="muted">2026-10-06</span></li></ul>
+                  <div style="margin-top:18px;font-size:11.5px;color:var(--a-muted)">소개 동의가 없는 신청에서는 입력칸 대신 이 문구가 보여요:</div>
+                  <div class="blocked" style="margin-top:6px">신청자가 중개사 소개에 동의하지 않아 기록할 수 없어요.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <ul class="notes">
+        <li>소개 기록에는 <b>중개사 이름과 날짜만</b> 남겨요. 수수료나 금액 칸은 없어요.</li>
+        <li>신청자의 소개 동의가 없으면 입력칸이 아예 보이지 않아요. 요청을 직접 조작해 보내도 서버와 DB에서 거부해요.</li>
+        <li>결과 메일은 <b>“링크 복사”로 관리자가 직접</b> 보내고 체크해요. 자동 메일 발송은 나중에 붙일 수 있어요.</li>
+        <li>입금 확인과 피드백 발송은 지금처럼 관리자가 직접 체크해요.</li>
+      </ul>
+    </article>
+
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+  try {
+    new QRCode(document.getElementById("qr"), { text: "https://ssulmo.app/s/mangwon-01", width: 200, height: 200, correctLevel: QRCode.CorrectLevel.M });
+  } catch (e) {
+    document.getElementById("qr").textContent = "QR";
+  }
+</script>
