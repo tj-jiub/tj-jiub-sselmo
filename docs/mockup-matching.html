@@ -29,7 +29,7 @@
   --t-h2: 41.9px;
   --t-h1: 67.8px;
   --lh: 1.618;
-  --sans: "Noto Sans KR", system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif;
+  --sans: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
 }
 @media (prefers-color-scheme: dark) {
@@ -42,6 +42,7 @@
 body, .app { word-break: keep-all; overflow-wrap: break-word; }
 .app p, .app li, .notes li, .top p { text-wrap: pretty; }
 ::selection { background: #fff0a6; color: #1d1d1b; }
+button, input, select, textarea { font-family: inherit; }
 body { background: var(--bg); color: var(--fg); font-family: var(--sans); padding-inline: 16px; padding-block: 40px 96px; }
 .board { max-width: 1240px; margin: 0 auto; }
 
@@ -69,7 +70,10 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans); paddin
 .url::before { content: "● ● ●  "; color: #cfcfca; letter-spacing: 2px; }
 
 /* ---------- App UI ---------- */
-.app { color: var(--a-ink); font-family: var(--sans); font-size: var(--t-base); line-height: var(--lh); }
+.app, .app * { color: var(--a-ink); }
+.app .cap, .app .where, .app .runner, .app .lead, .app .muted-t, .app .eyebrow, .app .steps span, .app .cat h5, .app .more, .app .pending, .app .aside ul, .app .choice span, .app .role span, .app .stats span, .app .rank, .app .url { color: var(--a-muted); }
+.app .steps .on, .app .choice.sel span, .app .role.primary span, .app .pending b, .app .more span { color: var(--a-ink); }
+.app { font-family: var(--sans); font-size: var(--t-base); line-height: var(--lh); }
 .app .nav { display: flex; justify-content: space-between; align-items: center; padding: 18px 48px; border-bottom: 1px solid var(--a-line); }
 .app .logo { font-weight: 700; font-size: 18px; letter-spacing: -.01em; }
 .app .logo i { font-style: normal; background: var(--a-yellow-sel); }
@@ -131,7 +135,8 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans); paddin
 .app .card .where { font-size: var(--t-cap); color: var(--a-muted); }
 .app .card .name { font-size: 20px; font-weight: 700; margin-top: 2px; }
 .app .card .intent { margin-top: 10px; font-size: 15px; }
-.app .card .intent b { background: var(--a-green); padding: 1px 8px; border-radius: 6px; font-weight: 700; }
+.app .card .intent { color: var(--a-ink); }
+.app .card .intent b { color: var(--a-ink); font-weight: 700; }
 .app .bar { height: 8px; background: var(--a-line); border-radius: 4px; overflow: hidden; margin-top: 10px; max-width: 420px; }
 .app .bar i { display: block; height: 100%; background: var(--a-green-deep); }
 .app .card .side { display: flex; gap: 8px; }
@@ -201,12 +206,13 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans); paddin
 <div class="board">
 
   <section class="top">
-    <div class="kicker">SSULMO · 시안 v5 · 창업 매칭 + PC·모바일 + 새 디자인 · 2026-10-08</div>
+    <div class="kicker">SSULMO · 시안 v6 · 창업 매칭 + PC·모바일 + 새 디자인 · 2026-10-08</div>
     <h1>창업자에게 맞는 공실을 찾아주는 흐름</h1>
     <p>처음 질문은 하나예요. <b>사업 아이템이 정해졌나요?</b> 정했으면 그 업종으로 동네 의견을 받은 공실을 추천하고, 아직이면 원하는 지역의 공실과 그곳에서 가장 원하는 업종을 보여줘요.</p>
     <p>같은 주소가 PC에서는 PC 화면으로, 휴대폰에서는 모바일 화면으로 열려요. 아래에 두 가지를 모두 그렸어요. 글자 크기는 황금비(1 : 1.618)로 커지고, 본문 줄 간격도 1.618이에요. 포인트 색은 파스텔 노랑과 연두예요.</p>
     <p><b>v5에서 바뀐 점:</b> 모바일 화면을 추가했어요. 한 화면에 7개가 넘는 선택지는 카테고리 카드로 묶었어요(밀러의 법칙). 줄바꿈은 항상 단어 단위로 해요. 강조 표시는 형광펜 대신 마우스로 드래그해 선택한 것 같은 모양이에요(예: <mark style="background:#ffe98a;color:#1d1d1b">이 부분처럼</mark>).</p>
     <div class="qs">
+      <div><span class="tag">v6</span> <b>하이라이트는 화면당 한 곳, 제목에만</b> 써요. 수치 문구에서는 바탕색을 빼고 진한 글자로만 강조해요. 연두는 막대 그래프와 1순위 카드 테두리에만 써요. 글꼴은 전부 <b>Noto Sans KR</b>이에요.</div>
       <div><span class="tag">확정</span> 휴대폰은 모바일 화면, PC는 PC 화면 · 추천 순서는 <b>이용 의향 인원이 많은 순</b> · 수치는 “응답자 N명 중 M명이 이용 의향” 고정 문구 · 50명 미만은 “집계 중”.</div>
       <div><span class="tag">구현 시 바뀌는 것</span> 지역으로 찾으려면 공실에 <b>구(區) 칸</b>이 따로 있어야 해요. 관리자 공실 등록 화면(A3)에 “구 선택”이 추가돼요.</div>
     </div>
@@ -378,7 +384,7 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans); paddin
     </div></div>
     <ul class="notes">
       <li>순서는 <b>이용 의향 인원(M)이 많은 순</b>이에요. 비율 순으로 바꿀 수도 있어요. 예: 120명 중 41명(34%) vs 60명 중 15명(25%).</li>
-      <li>1순위 카드에는 연두 테두리를 둘렀고, 수치 문구는 연두 바탕이에요. 문구는 고정 규칙인 “응답자 N명 중 M명이 이용 의향” 그대로예요.</li>
+      <li>1순위 카드에는 연두 테두리를 둘렀어요. 수치 문구는 바탕색 없이 진한 글자로만 강조하고, 문구는 고정 규칙인 “응답자 N명 중 M명이 이용 의향” 그대로예요.</li>
       <li>그 업종을 고른 사람이 한 명도 없는 공실은 추천에서 빠져요.</li>
       <li>한 화면에는 추천 카드를 <b>최대 3장</b>까지만 보여주고, 나머지는 “더 보기”로 펼쳐요.</li>
     </ul>
