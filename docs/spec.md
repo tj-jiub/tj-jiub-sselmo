@@ -24,6 +24,17 @@ Source: `ssulmo-prototype-prompt.md` (user, 2026-10-07) + decisions agreed in ch
 - Reference score: manual 0-100 field labelled "참고용"; criteria decided later.
 - Drizzle dropped in favour of plain SQL migrations (`wrangler d1 migrations`) — fewer moving parts for ~5 tables.
 
+## Next iteration (requested 2026-10-08, mockup v4 under review — not built yet)
+Mockup: `docs/mockup-matching.html` (https://claude.ai/artifact/KX92kBDanSiYbBJd5dcRt4).
+- **Founder matching** replaces the plain `/spaces` list. First question: "사업 아이템이 정해졌나요?"
+  - Yes → pick a business type → recommend spaces whose respondents chose that type, most "would use" first.
+  - No → pick a preferred district (구) → show that district's spaces with their top-voted type, e.g. "성동구 … 1위 아이스크림·디저트 · 응답자 120명 중 100명이 이용 의향 — 지원해보세요".
+  - Requires a district (구) field on spaces (admin form A3).
+  - Numbers still only for spaces with ≥ 50 responses; others are listed as "집계 중". The fixed phrase stays "응답자 N명 중 M명이 이용 의향".
+- **PC-optimized** layout for founder and admin screens (QR survey stays phone-first — pending user confirmation).
+- **Typography:** golden ratio. Scale ×1.618 from 16px (16 / 26 / 42 / 68), captions ÷√φ (12.6px), body line-height 1.618, 61.8/38.2 golden split layouts.
+- **Colours:** two pastel accents, yellow `#FFF0A6` and green `#D3F0BF` (deeper `#F2D65C` / `#8FCB6E` for marks), used only as fills; text stays ink `#1D1D1B`. Replaces the single orange accent.
+
 ## Scope (verbatim from the prompt)
 
 ### A. Space registration (admin only)
