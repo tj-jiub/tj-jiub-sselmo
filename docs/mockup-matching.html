@@ -21,6 +21,7 @@
   --a-yellow-deep: #f2d65c;
   --a-green: #d3f0bf;
   --a-green-deep: #8fcb6e;
+  --a-yellow-sel: #ffe98a;
   /* Golden-ratio type scale: base 16, ×1.618 up, ÷1.272 (√φ) for captions */
   --t-cap: 12.6px;
   --t-base: 16px;
@@ -37,6 +38,10 @@
 :root[data-theme="dark"] { --bg: #171716; --fg: #ecebe7; --muted: #9c9a95; --rule: #2f2e2b; --tag: #e8cf63; --note-bg: #20201e; color-scheme: dark; }
 
 * { box-sizing: border-box; }
+/* Korean wraps only between words, never inside one. */
+body, .app { word-break: keep-all; overflow-wrap: break-word; }
+.app p, .app li, .notes li, .top p { text-wrap: pretty; }
+::selection { background: #fff0a6; color: #1d1d1b; }
 body { background: var(--bg); color: var(--fg); font-family: var(--sans); padding-inline: 16px; padding-block: 40px 96px; }
 .board { max-width: 1240px; margin: 0 auto; }
 
@@ -67,7 +72,7 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans); paddin
 .app { color: var(--a-ink); font-family: var(--sans); font-size: var(--t-base); line-height: var(--lh); }
 .app .nav { display: flex; justify-content: space-between; align-items: center; padding: 18px 48px; border-bottom: 1px solid var(--a-line); }
 .app .logo { font-weight: 700; font-size: 18px; letter-spacing: -.01em; }
-.app .logo i { font-style: normal; background: var(--a-yellow); padding: 0 6px; border-radius: 4px; }
+.app .logo i { font-style: normal; background: var(--a-yellow-sel); }
 .app .nav nav { display: flex; gap: 28px; font-size: 14px; color: var(--a-muted); }
 .app .page { padding: 56px 48px 64px; }
 .app .eyebrow { font-size: var(--t-cap); font-weight: 700; letter-spacing: .12em; color: var(--a-muted); }
@@ -76,7 +81,15 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans); paddin
 .app h4.h2 { font-size: var(--t-h3); line-height: 1.382; margin: 0; font-weight: 700; }
 .app .lead { font-size: 17px; color: var(--a-muted); margin: 16px 0 0; max-width: 34em; }
 .app .cap { font-size: var(--t-cap); color: var(--a-muted); }
-.app mark { background: linear-gradient(transparent 55%, var(--a-yellow) 55%); color: inherit; padding: 0 2px; }
+.app mark {
+  /* Looks like a mouse-drag text selection: a solid block over the full line box. */
+  background: var(--a-yellow-sel);
+  color: inherit;
+  padding: 0;
+  border-radius: 0;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
 
 /* golden split: 61.8 / 38.2 */
 .app .split { display: grid; grid-template-columns: 1.618fr 1fr; gap: 48px; align-items: start; }
@@ -138,6 +151,39 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans); paddin
 .app .stats b { display: block; font-size: var(--t-h3); font-variant-numeric: tabular-nums; }
 .app .stats span { font-size: var(--t-cap); color: var(--a-muted); }
 
+/* category cards (Miller's law: ≤ 7±2 items per group) */
+.app .cats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 24px; }
+.app .cat { border: 1px solid var(--a-line); border-radius: 14px; padding: 16px 18px 18px; background: var(--a-paper); }
+.app .cat h5 { margin: 0; font-size: var(--t-cap); color: var(--a-muted); font-weight: 700; letter-spacing: .06em; }
+.app .cat .chips { margin-top: 10px; gap: 8px; }
+.app .more { margin-top: 18px; font-size: 15px; color: var(--a-muted); }
+.app .more span { text-decoration: underline; text-underline-offset: 4px; color: var(--a-ink); }
+
+/* phone frames */
+.phones { display: flex; flex-wrap: wrap; gap: 32px 24px; align-items: flex-start; }
+.ph { width: min(340px, 100%); display: grid; gap: 10px; }
+.phone { border: 9px solid #1b1b1b; border-radius: 30px; overflow: hidden; background: var(--a-paper); }
+.phone .url { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.phone .url::before { content: ""; }
+.phone .app .nav { padding: 14px 18px; }
+.phone .app .page { padding: 26px 18px 30px; }
+.phone .app h3.h1, .phone .app h3.hero { font-size: var(--t-h3); line-height: 1.382; letter-spacing: -.01em; }
+.phone .app .lead { font-size: 15px; }
+.phone .app .choice-row, .phone .app .cats, .phone .app .hero-wrap, .phone .app .split { grid-template-columns: 1fr; gap: 12px; }
+.phone .app .choice { padding: 18px; }
+.phone .app .choice b { font-size: 18px; }
+.phone .app .card { grid-template-columns: 1fr; padding: 18px; }
+.phone .app .card .side { margin-top: 8px; }
+.phone .app .card .side .btn { flex: 1; justify-content: center; }
+.phone .app .actions { margin-top: 24px; }
+.phone .app .actions .btn { flex: 1; justify-content: center; }
+.phone .app .stats { margin-top: 28px; }
+.phone .app .stats b { font-size: 20px; }
+.phone .app .menu { font-size: 20px; line-height: 1; }
+.phone .app .aside { padding: 16px 18px; display: flex; align-items: baseline; gap: 10px; }
+.phone .app .aside .big { font-size: var(--t-h3); }
+.phone .app .steps { margin-bottom: 18px; }
+
 /* design tokens section */
 .tokens { display: grid; grid-template-columns: 1.618fr 1fr; gap: 24px; }
 .tokens > div { background: var(--note-bg); border: 1px solid var(--rule); border-radius: 10px; padding: 20px 22px; min-width: 0; }
@@ -155,13 +201,13 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans); paddin
 <div class="board">
 
   <section class="top">
-    <div class="kicker">SSULMO · 시안 v4 · 창업 매칭 + PC + 새 디자인 · 2026-10-08</div>
+    <div class="kicker">SSULMO · 시안 v5 · 창업 매칭 + PC·모바일 + 새 디자인 · 2026-10-08</div>
     <h1>창업자에게 맞는 공실을 찾아주는 흐름</h1>
     <p>처음 질문은 하나예요. <b>사업 아이템이 정해졌나요?</b> 정했으면 그 업종으로 동네 의견을 받은 공실을 추천하고, 아직이면 원하는 지역의 공실과 그곳에서 가장 원하는 업종을 보여줘요.</p>
-    <p>화면은 PC 기준(1080px 이상)으로 그렸어요. 글자 크기는 황금비(1 : 1.618)로 커지고, 본문 줄 간격도 1.618이에요. 포인트 색은 파스텔 노랑과 연두 두 가지예요. 휴대폰에서 보면 화면이 옆으로 스크롤돼요.</p>
+    <p>같은 주소가 PC에서는 PC 화면으로, 휴대폰에서는 모바일 화면으로 열려요. 아래에 두 가지를 모두 그렸어요. 글자 크기는 황금비(1 : 1.618)로 커지고, 본문 줄 간격도 1.618이에요. 포인트 색은 파스텔 노랑과 연두예요.</p>
+    <p><b>v5에서 바뀐 점:</b> 모바일 화면을 추가했어요. 한 화면에 7개가 넘는 선택지는 카테고리 카드로 묶었어요(밀러의 법칙). 줄바꿈은 항상 단어 단위로 해요. 강조 표시는 형광펜 대신 마우스로 드래그해 선택한 것 같은 모양이에요(예: <mark style="background:#ffe98a;color:#1d1d1b">이 부분처럼</mark>).</p>
     <div class="qs">
-      <div><span class="tag">확인 필요</span> <b>QR 설문(P1)도 PC 기준으로 바꿀까요?</b> 주민은 가게 앞에서 휴대폰으로 QR을 찍기 때문에, 설문은 휴대폰 화면을 유지하고 창업자·관리자 화면만 PC 기준으로 바꾸는 걸 추천해요.</div>
-      <div><span class="tag">확인 필요</span> <b>예시 문구의 “100개의 투표”는</b> 고정 문구 규칙에 따라 “응답자 120명 중 100명이 이용 의향”처럼 보여줘요. 응답이 50명 미만인 공실은 숫자 없이 “집계 중”으로 따로 묶어요.</div>
+      <div><span class="tag">확정</span> 휴대폰은 모바일 화면, PC는 PC 화면 · 추천 순서는 <b>이용 의향 인원이 많은 순</b> · 수치는 “응답자 N명 중 M명이 이용 의향” 고정 문구 · 50명 미만은 “집계 중”.</div>
       <div><span class="tag">구현 시 바뀌는 것</span> 지역으로 찾으려면 공실에 <b>구(區) 칸</b>이 따로 있어야 해요. 관리자 공실 등록 화면(A3)에 “구 선택”이 추가돼요.</div>
     </div>
   </section>
@@ -259,17 +305,23 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans); paddin
               <div class="steps"><span class="done">1 · 아이템</span><span class="on">2 · 업종</span><span>3 · 추천 공실</span></div>
               <div class="eyebrow">공실 찾기</div>
               <h3 class="h1">어떤 가게를 하려고 하나요?</h3>
-              <div class="chips">
-                <label class="chip"><input type="radio" name="m2" id="m2-1"><span>카페</span></label>
-                <label class="chip"><input type="radio" name="m2" id="m2-2" checked><span>베이커리</span></label>
-                <label class="chip"><input type="radio" name="m2" id="m2-3"><span>아이스크림·디저트</span></label>
-                <label class="chip"><input type="radio" name="m2" id="m2-4"><span>분식</span></label>
-                <label class="chip"><input type="radio" name="m2" id="m2-5"><span>반찬가게</span></label>
-                <label class="chip"><input type="radio" name="m2" id="m2-6"><span>세탁소</span></label>
-                <label class="chip"><input type="radio" name="m2" id="m2-7"><span>꽃집</span></label>
-                <label class="chip"><input type="radio" name="m2" id="m2-8"><span>공방</span></label>
-                <label class="chip"><input type="radio" name="m2" id="m2-9"><span>스터디카페</span></label>
-                <label class="chip"><input type="radio" name="m2" id="m2-10"><span>필라테스·요가</span></label>
+              <div class="cats">
+                <div class="cat"><h5>먹거리</h5><div class="chips">
+                  <label class="chip"><input type="radio" name="m2" id="m2-1"><span>카페</span></label>
+                  <label class="chip"><input type="radio" name="m2" id="m2-2" checked><span>베이커리</span></label>
+                  <label class="chip"><input type="radio" name="m2" id="m2-3"><span>아이스크림·디저트</span></label>
+                  <label class="chip"><input type="radio" name="m2" id="m2-4"><span>분식</span></label>
+                  <label class="chip"><input type="radio" name="m2" id="m2-5"><span>반찬가게</span></label>
+                </div></div>
+                <div class="cat"><h5>생활</h5><div class="chips">
+                  <label class="chip"><input type="radio" name="m2" id="m2-6"><span>세탁소</span></label>
+                  <label class="chip"><input type="radio" name="m2" id="m2-7"><span>꽃집</span></label>
+                </div></div>
+                <div class="cat"><h5>배우기·운동</h5><div class="chips">
+                  <label class="chip"><input type="radio" name="m2" id="m2-8"><span>공방</span></label>
+                  <label class="chip"><input type="radio" name="m2" id="m2-9"><span>스터디카페</span></label>
+                  <label class="chip"><input type="radio" name="m2" id="m2-10"><span>필라테스·요가</span></label>
+                </div></div>
               </div>
               <div class="actions"><a class="btn ghost" href="#m1">← 이전</a><a class="btn" href="#m3">추천 공실 보기 →</a></div>
             </div>
@@ -284,6 +336,7 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans); paddin
     </div></div>
     <ul class="notes">
       <li>화면을 6.18 : 3.82 황금 분할로 나눴어요. 왼쪽에서 고르면 오른쪽 숫자가 바로 바뀌어요.</li>
+      <li>업종 10개를 한 줄에 늘어놓지 않고 <b>카테고리 카드 3개</b>로 묶었어요. 한 카드에는 최대 5개까지만 들어가요(밀러의 법칙).</li>
       <li>업종 목록은 설문(P1)과 같은 목록이에요. 설문 문항을 바꾸면 여기도 같이 바뀌어요.</li>
     </ul>
   </article>
@@ -327,6 +380,7 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans); paddin
       <li>순서는 <b>이용 의향 인원(M)이 많은 순</b>이에요. 비율 순으로 바꿀 수도 있어요. 예: 120명 중 41명(34%) vs 60명 중 15명(25%).</li>
       <li>1순위 카드에는 연두 테두리를 둘렀고, 수치 문구는 연두 바탕이에요. 문구는 고정 규칙인 “응답자 N명 중 M명이 이용 의향” 그대로예요.</li>
       <li>그 업종을 고른 사람이 한 명도 없는 공실은 추천에서 빠져요.</li>
+      <li>한 화면에는 추천 카드를 <b>최대 3장</b>까지만 보여주고, 나머지는 “더 보기”로 펼쳐요.</li>
     </ul>
   </article>
 
@@ -404,5 +458,144 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans); paddin
       <li>2·3위 업종도 작게 보여줘서, 1위가 아닌 아이템을 생각하는 사람도 참고할 수 있게 했어요.</li>
     </ul>
   </article>
+
+  <div class="group-title"><h2>모바일 화면</h2><span>같은 주소를 휴대폰으로 열면 이렇게 보여요 · 한 줄 구성 · 버튼은 손가락 너비로</span></div>
+  <div class="phones">
+
+    <div class="ph">
+      <div class="label"><span class="id">M0·m</span><span class="name">첫 화면</span></div>
+      <div class="phone"><div class="url">ssulmo.app</div>
+        <div class="app">
+          <div class="nav"><span class="logo">썰<i>모</i></span><span class="menu">☰</span></div>
+          <div class="page">
+            <div class="eyebrow">동네가 고른 가게 자리</div>
+            <h3 class="hero">비어 있는 자리에 <mark>동네가 원하는 가게</mark>를</h3>
+            <p class="lead">가게 앞 QR로 모은 주민 의견을 보고, 맞는 공실을 찾아 창업을 신청해요. 신청은 무료예요.</p>
+            <div style="display:grid;gap:10px;margin-top:22px">
+              <a class="role primary" href="#m1"><b>창업할 자리를 찾아요 →</b><span>아이템이나 지역으로 추천받기</span></a>
+              <a class="role" href="#"><b>관리자예요</b><span>공실 등록 · 리포트 · 신청 검토</span></a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ph">
+      <div class="label"><span class="id">M1·m</span><span class="name">아이템이 정해졌나요?</span></div>
+      <div class="phone"><div class="url">ssulmo.app/find</div>
+        <div class="app">
+          <div class="nav"><span class="logo">썰<i>모</i></span><span class="menu">☰</span></div>
+          <div class="page">
+            <div class="steps"><span class="on">1 · 아이템</span><span>2 · 고르기</span><span>3 · 추천</span></div>
+            <h3 class="h1">사업 아이템이 정해졌나요?</h3>
+            <div class="choice-row" style="margin-top:20px">
+              <button class="choice sel" type="button"><b>네, 정했어요</b><span>그 업종을 원하는 동네의 공실을 보여드려요.</span></button>
+              <button class="choice" type="button"><b>아직이에요</b><span>지역을 고르면 그곳 공실과 원하는 업종을 알려드려요.</span></button>
+            </div>
+            <div class="actions"><a class="btn" href="#m2">다음 →</a></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ph">
+      <div class="label"><span class="id">M2·m</span><span class="name">업종 고르기</span></div>
+      <div class="phone"><div class="url">ssulmo.app/find?item=yes</div>
+        <div class="app">
+          <div class="nav"><span class="logo">썰<i>모</i></span><span class="menu">☰</span></div>
+          <div class="page">
+            <div class="steps"><span class="done">1 · 아이템</span><span class="on">2 · 업종</span><span>3 · 추천</span></div>
+            <h3 class="h1">어떤 가게를 하려고 하나요?</h3>
+            <div class="cats">
+              <div class="cat"><h5>먹거리</h5><div class="chips">
+                <label class="chip"><input type="radio" name="m2m" id="m2m-1"><span>카페</span></label>
+                <label class="chip"><input type="radio" name="m2m" id="m2m-2" checked><span>베이커리</span></label>
+                <label class="chip"><input type="radio" name="m2m" id="m2m-3"><span>아이스크림·디저트</span></label>
+                <label class="chip"><input type="radio" name="m2m" id="m2m-4"><span>분식</span></label>
+                <label class="chip"><input type="radio" name="m2m" id="m2m-5"><span>반찬가게</span></label>
+              </div></div>
+              <div class="cat"><h5>생활</h5><div class="chips">
+                <label class="chip"><input type="radio" name="m2m" id="m2m-6"><span>세탁소</span></label>
+                <label class="chip"><input type="radio" name="m2m" id="m2m-7"><span>꽃집</span></label>
+              </div></div>
+              <div class="cat"><h5>배우기·운동</h5><div class="chips">
+                <label class="chip"><input type="radio" name="m2m" id="m2m-8"><span>공방</span></label>
+                <label class="chip"><input type="radio" name="m2m" id="m2m-9"><span>스터디카페</span></label>
+                <label class="chip"><input type="radio" name="m2m" id="m2m-10"><span>필라테스·요가</span></label>
+              </div></div>
+            </div>
+            <div class="aside" style="margin-top:16px"><span class="big">2곳</span><span class="cap">베이커리를 원하는 공실</span></div>
+            <div class="actions"><a class="btn" href="#m3">추천 공실 보기 →</a></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ph">
+      <div class="label"><span class="id">M3·m</span><span class="name">추천 공실 · 업종 기준</span></div>
+      <div class="phone"><div class="url">ssulmo.app/find?type=베이커리</div>
+        <div class="app">
+          <div class="nav"><span class="logo">썰<i>모</i></span><span class="menu">☰</span></div>
+          <div class="page">
+            <div class="eyebrow">베이커리 · 추천 공실</div>
+            <h3 class="h1">베이커리를 원하는 동네가 2곳 있어요</h3>
+            <div class="cards" style="margin-top:18px">
+              <div class="card top">
+                <div>
+                  <div class="where"><span class="rank">01</span> · 성동구 성수동</div>
+                  <div class="name">성수동 골목 1층 공실</div>
+                  <div class="intent"><b>응답자 120명 중 41명이 이용 의향</b></div>
+                  <div class="bar"><i style="width:34%"></i></div>
+                </div>
+                <div class="side"><span class="btn sm ghost">의견 보기</span><span class="btn sm">지원하기</span></div>
+              </div>
+              <div class="card">
+                <div>
+                  <div class="where"><span class="rank">02</span> · 마포구 망원동</div>
+                  <div class="name">망원동 1층 코너 공실</div>
+                  <div class="intent"><b>응답자 60명 중 15명이 이용 의향</b></div>
+                  <div class="bar"><i style="width:25%"></i></div>
+                </div>
+                <div class="side"><span class="btn sm ghost">의견 보기</span><span class="btn sm">지원하기</span></div>
+              </div>
+            </div>
+            <div class="pending" style="padding:14px 18px;font-size:14px"><b>집계 중 1곳</b> · 연남동 2층 공실</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ph">
+      <div class="label"><span class="id">M5·m</span><span class="name">추천 공실 · 지역 기준</span></div>
+      <div class="phone"><div class="url">ssulmo.app/find?district=성동구</div>
+        <div class="app">
+          <div class="nav"><span class="logo">썰<i>모</i></span><span class="menu">☰</span></div>
+          <div class="page">
+            <div class="eyebrow">성동구 · 추천 공실</div>
+            <h3 class="h1">성동구에는 <mark>아이스크림</mark>을 원하는 공실이 있어요</h3>
+            <div class="cards" style="margin-top:18px">
+              <div class="card top">
+                <div>
+                  <div class="where">성동구 성수동</div>
+                  <div class="name">성수동 골목 1층 공실</div>
+                  <div class="intent">1위 아이스크림·디저트</div>
+                  <div class="intent" style="margin-top:4px"><b>응답자 120명 중 100명이 이용 의향</b></div>
+                  <div class="bar"><i style="width:83%"></i></div>
+                </div>
+                <div class="side"><span class="btn sm">이 업종으로 지원해보기</span></div>
+              </div>
+            </div>
+            <p class="more">성동구 공실 1곳 <span>더 보기</span></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <ul class="notes" style="margin-top:16px">
+    <li>모바일은 <b>한 줄 구성</b>이에요. PC의 6.18 : 3.82 나누기는 위아래로 쌓이고, 오른쪽 요약 상자는 한 줄 요약으로 줄어들어요.</li>
+    <li>모바일 제목은 26px(PC의 한 단계 아래)이고, 본문 16px와 줄 간격 1.618은 똑같아요.</li>
+    <li>모바일 지역 결과(M5·m)는 카드 1장만 먼저 보여주고 나머지는 “더 보기”로 펼쳐요. 2·3위 업종은 “동네 의견 보기”에서 확인해요.</li>
+  </ul>
 
 </div>

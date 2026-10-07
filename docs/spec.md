@@ -31,7 +31,11 @@ Mockup: `docs/mockup-matching.html` (https://claude.ai/artifact/KX92kBDanSiYbBJd
   - No → pick a preferred district (구) → show that district's spaces with their top-voted type, e.g. "성동구 … 1위 아이스크림·디저트 · 응답자 120명 중 100명이 이용 의향 — 지원해보세요".
   - Requires a district (구) field on spaces (admin form A3).
   - Numbers still only for spaces with ≥ 50 responses; others are listed as "집계 중". The fixed phrase stays "응답자 N명 중 M명이 이용 의향".
-- **PC-optimized** layout for founder and admin screens (QR survey stays phone-first — pending user confirmation).
+- **Responsive (decided 2026-10-08):** phones get a mobile-optimized layout, PCs get the PC layout (same URLs).
+- **Ranking:** by "would use" headcount (M), highest first.
+- **Miller's law:** keep each screen to ~7±2 items; larger sets go into category cards (business types: 먹거리 / 생활 / 배우기·운동), at most 3 recommendation cards before "더 보기".
+- **Korean line breaks only between words** (`word-break: keep-all`), never mid-word.
+- **Highlight** looks like a mouse-drag text selection (solid full-line pastel block), not a half-height marker.
 - **Typography:** golden ratio. Scale ×1.618 from 16px (16 / 26 / 42 / 68), captions ÷√φ (12.6px), body line-height 1.618, 61.8/38.2 golden split layouts.
 - **Colours:** two pastel accents, yellow `#FFF0A6` and green `#D3F0BF` (deeper `#F2D65C` / `#8FCB6E` for marks), used only as fills; text stays ink `#1D1D1B`. Replaces the single orange accent.
 
