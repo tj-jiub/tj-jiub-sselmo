@@ -1,1 +1,9 @@
+node_modules/
 .superpowers/
+.wrangler/
+.react-router/
+/build/
+.dev.vars
+*.tsbuildinfo
+test-results/
+playwright-report/
