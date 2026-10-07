@@ -182,3 +182,15 @@ describe("broker introduction log", () => {
     expect(await listBrokerIntros(db, id)).toMatchObject([{ broker_name: "망원공인중개사", introduced_on: "2026-10-07" }]);
   });
 });
+
+describe("paid feedback database guard", () => {
+  it("database trigger blocks marking feedback paid or sent before it was requested", async () => {
+    const { db, id } = await seeded();
+    await expect(
+      db.prepare("UPDATE applications SET payment_confirmed = 1, feedback_sent = 1 WHERE id = ?").bind(id).run(),
+    ).rejects.toThrow(/feedback not requested/);
+    await expect(
+      db.prepare("UPDATE applications SET feedback = 'x' WHERE id = ?").bind(id).run(),
+    ).rejects.toThrow(/feedback not requested/);
+  });
+});

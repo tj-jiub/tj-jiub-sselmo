@@ -11,7 +11,7 @@ import {
   saveResult,
 } from "~/lib/applications.server";
 import { VERDICTS } from "~/lib/verdicts";
-import { FEE_AMOUNT_KRW } from "~/lib/policy";
+import { FEE_AMOUNT_KRW, FEE_SERVICE_NAME } from "~/lib/policy";
 import { CopyButton } from "~/components/CopyButton";
 import { ErrorNote, Section, Shell, Title } from "~/components/ui";
 
@@ -136,7 +136,7 @@ export default function AdminApplication({ loaderData, actionData }: Route.Compo
             </Form>
           </Section>
 
-          <Section title={`2. 서면 피드백 (유료 · ${FEE_AMOUNT_KRW.toLocaleString("ko-KR")}원)`}>
+          <Section title={`2. ${FEE_SERVICE_NAME} (유료 · ${FEE_AMOUNT_KRW.toLocaleString("ko-KR")}원)`}>
             {app.feedback_requested_at ? (
               <Form method="post" className="space-y-4 text-sm">
                 <input type="hidden" name="intent" value="save-feedback" />

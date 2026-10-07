@@ -14,16 +14,19 @@ export async function saveResponse(
   answers: SurveyAnswers,
   now = Date.now(),
 ): Promise<"saved" | "cooldown"> {
-  const recent = await db
-    .prepare("SELECT 1 FROM survey_responses WHERE space_id = ? AND device_hash = ? AND created_at > ? LIMIT 1")
-    .bind(spaceId, deviceHash, now - RESPONSE_COOLDOWN_MS)
-    .first();
-  if (recent) return "cooldown";
-  await db
-    .prepare("INSERT INTO survey_responses (space_id, answers, device_hash, created_at) VALUES (?, ?, ?, ?)")
-    .bind(spaceId, JSON.stringify(answers), deviceHash, now)
+  // One statement, so two simultaneous submissions (double tap) cannot both
+  // pass the 24h check before either row exists.
+  const res = await db
+    .prepare(
+      `INSERT INTO survey_responses (space_id, answers, device_hash, created_at)
+       SELECT ?, ?, ?, ?
+       WHERE NOT EXISTS (
+         SELECT 1 FROM survey_responses WHERE space_id = ? AND device_hash = ? AND created_at > ?
+       )`,
+    )
+    .bind(spaceId, JSON.stringify(answers), deviceHash, now, spaceId, deviceHash, now - RESPONSE_COOLDOWN_MS)
     .run();
-  return "saved";
+  return res.meta.changes === 1 ? "saved" : "cooldown";
 }
 
 export async function saveContact(db: D1Database, spaceId: number, contact: string, now = Date.now()): Promise<void> {

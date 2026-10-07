@@ -18,10 +18,16 @@ import { Choice, Consent, ErrorNote, Question, Shell, SubmitButton, TextInput, T
 
 export const meta: Route.MetaFunction = ({ data }) => [{ title: data ? `${data.name} — 썰모 설문` : "썰모" }];
 
-export async function loader({ params, context }: Route.LoaderArgs) {
+export async function loader({ request, params, context }: Route.LoaderArgs) {
   const space = await getPublicSpace(context.cloudflare.env.DB, params.slug);
   if (!space) throw new Response("Not found", { status: 404 });
-  return { name: space.name, neighborhood: space.neighborhood, slug: space.slug };
+  // Issue the device cookie with the page, so a first-visit double tap sends
+  // the same id twice instead of two fresh ones.
+  const device = await getDeviceId(request);
+  return data(
+    { name: space.name, neighborhood: space.neighborhood, slug: space.slug },
+    { headers: device.setCookie ? { "Set-Cookie": device.setCookie } : undefined },
+  );
 }
 
 export async function action({ request, params, context }: Route.ActionArgs) {

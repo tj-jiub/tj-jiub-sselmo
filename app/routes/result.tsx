@@ -68,7 +68,7 @@ export default function Result({ loaderData, actionData }: Route.ComponentProps)
         </Section>
       ) : (
         <Form method="post">
-          <Section title="서면 피드백 받기 (선택)">
+          <Section title={`${FEE_SERVICE_NAME} 받기 (선택)`}>
             <p className="text-2xl font-bold tabular-nums">{won(FEE_AMOUNT_KRW)}</p>
             <p className="mt-2 text-sm leading-relaxed text-muted">
               동네 설문 결과를 바탕으로 사업계획서를 항목별로 짚은 피드백 문서를 이메일로 보내드려요.

@@ -34,6 +34,14 @@ describe("saveResponse", () => {
     expect(await listAnswers(db, a)).toHaveLength(3);
   });
 
+  it("saves only one of two simultaneous submissions from the same device", async () => {
+    const { db, a } = await setup();
+    const device = await hashDeviceId("double-tap");
+    const results = await Promise.all([saveResponse(db, a, device, answers, 1000), saveResponse(db, a, device, answers, 1001)]);
+    expect(results.sort()).toEqual(["cooldown", "saved"]);
+    expect(await listAnswers(db, a)).toHaveLength(1);
+  });
+
   it("hashes device ids rather than storing them", async () => {
     expect(await hashDeviceId("abc")).toMatch(/^[0-9a-f]{64}$/);
   });
