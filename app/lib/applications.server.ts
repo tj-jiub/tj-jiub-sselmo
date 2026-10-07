@@ -1,5 +1,6 @@
 import { toHex } from "./hex";
 import type { ParseResult } from "./result";
+import { VERDICTS } from "./verdicts";
 
 export type ApplicationForm = {
   businessType: string;
@@ -132,4 +133,125 @@ export async function requestFeedback(
     .bind(now, now, row.id)
     .run();
   return "requested";
+}
+
+export type Application = {
+  id: number;
+  space_id: number;
+  result_token: string;
+  business_type: string;
+  plan_text: string;
+  plan_file_key: string | null;
+  est_cost_manwon: number;
+  contact_name: string;
+  email: string;
+  consent_privacy_at: number;
+  consent_intro_terms_at: number;
+  consent_broker_intro: number;
+  consent_broker_intro_at: number | null;
+  result_verdict: string | null;
+  result_summary: string | null;
+  result_sent: number;
+  reference_score: number | null;
+  feedback_requested_at: number | null;
+  consent_fee_terms_at: number | null;
+  payment_confirmed: number;
+  feedback: string | null;
+  feedback_sent: number;
+  created_at: number;
+};
+export type ApplicationListItem = Application & { space_name: string };
+
+const SELECT_WITH_SPACE = "SELECT a.*, s.name AS space_name FROM applications a JOIN spaces s ON s.id = a.space_id";
+
+export async function listApplications(db: D1Database): Promise<ApplicationListItem[]> {
+  const { results } = await db.prepare(`${SELECT_WITH_SPACE} ORDER BY a.id DESC`).all<ApplicationListItem>();
+  return results;
+}
+
+export async function getApplication(db: D1Database, id: number): Promise<ApplicationListItem | null> {
+  return db.prepare(`${SELECT_WITH_SPACE} WHERE a.id = ?`).bind(id).first<ApplicationListItem>();
+}
+
+export type ResultForm = { verdict: string | null; summary: string | null; referenceScore: number | null; resultSent: boolean };
+
+export function parseResultForm(form: FormData): ParseResult<ResultForm> {
+  const verdict = String(form.get("verdict") ?? "");
+  if (verdict && !VERDICTS.some((v) => v.value === verdict)) return { ok: false, error: "판정을 다시 골라 주세요." };
+  const summary = String(form.get("summary") ?? "").trim();
+  if (summary.length > 1000) return { ok: false, error: "요약은 1,000자 이내로 적어 주세요." };
+  const score = String(form.get("referenceScore") ?? "").trim();
+  if (score && (!/^\d+$/.test(score) || Number(score) > 100)) {
+    return { ok: false, error: "참고 점수는 0~100 사이 숫자로 적어 주세요." };
+  }
+  const resultSent = form.get("resultSent") === "on";
+  if (resultSent && (!verdict || !summary)) {
+    return { ok: false, error: "판정과 요약을 먼저 작성해야 결과 메일을 보낼 수 있어요." };
+  }
+  return {
+    ok: true,
+    value: { verdict: verdict || null, summary: summary || null, referenceScore: score ? Number(score) : null, resultSent },
+  };
+}
+
+export async function saveResult(db: D1Database, id: number, r: ResultForm): Promise<void> {
+  await db
+    .prepare("UPDATE applications SET result_verdict = ?, result_summary = ?, reference_score = ?, result_sent = ? WHERE id = ?")
+    .bind(r.verdict, r.summary, r.referenceScore, r.resultSent ? 1 : 0, id)
+    .run();
+}
+
+export type FeedbackForm = { paymentConfirmed: boolean; feedback: string | null; feedbackSent: boolean };
+
+export function parseFeedbackForm(form: FormData): FeedbackForm {
+  const feedback = String(form.get("feedback") ?? "").trim();
+  return {
+    paymentConfirmed: form.get("paymentConfirmed") === "on",
+    feedback: feedback || null,
+    feedbackSent: form.get("feedbackSent") === "on",
+  };
+}
+
+// Paid feedback only exists once the applicant asked for it on the result page.
+export async function saveFeedback(db: D1Database, id: number, f: FeedbackForm): Promise<"saved" | "not-requested"> {
+  const res = await db
+    .prepare(
+      "UPDATE applications SET payment_confirmed = ?, feedback = ?, feedback_sent = ? WHERE id = ? AND feedback_requested_at IS NOT NULL",
+    )
+    .bind(f.paymentConfirmed ? 1 : 0, f.feedback, f.feedbackSent ? 1 : 0, id)
+    .run();
+  return res.meta.changes === 1 ? "saved" : "not-requested";
+}
+
+export async function createBrokerIntro(
+  db: D1Database,
+  applicationId: number,
+  brokerName: string,
+  introducedOn: string,
+  now = Date.now(),
+): Promise<"saved" | "no-consent" | "invalid"> {
+  const name = brokerName.trim();
+  if (!name || name.length > 60 || !/^\d{4}-\d{2}-\d{2}$/.test(introducedOn)) return "invalid";
+  const app = await db
+    .prepare("SELECT consent_broker_intro FROM applications WHERE id = ?")
+    .bind(applicationId)
+    .first<{ consent_broker_intro: number }>();
+  // The broker_intros_require_consent trigger enforces the same rule in the DB.
+  if (app?.consent_broker_intro !== 1) return "no-consent";
+  await db
+    .prepare("INSERT INTO broker_intros (application_id, broker_name, introduced_on, created_at) VALUES (?, ?, ?, ?)")
+    .bind(applicationId, name, introducedOn, now)
+    .run();
+  return "saved";
+}
+
+export async function listBrokerIntros(
+  db: D1Database,
+  applicationId: number,
+): Promise<Array<{ id: number; broker_name: string; introduced_on: string }>> {
+  const { results } = await db
+    .prepare("SELECT id, broker_name, introduced_on FROM broker_intros WHERE application_id = ? ORDER BY introduced_on DESC, id DESC")
+    .bind(applicationId)
+    .all<{ id: number; broker_name: string; introduced_on: string }>();
+  return results;
 }
