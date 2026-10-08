@@ -4,6 +4,7 @@ export type Space = {
   id: number;
   name: string;
   neighborhood: string;
+  district: string | null;
   slug: string;
   owner_consent: number;
   consent_file_key: string | null;
@@ -14,14 +15,18 @@ const SLUG_PATTERN = /^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/;
 
 export function parseSpaceForm(
   form: FormData,
-): ParseResult<{ name: string; neighborhood: string; slug: string; ownerConsent: boolean }> {
+): ParseResult<{ name: string; district: string; neighborhood: string; slug: string; ownerConsent: boolean }> {
   const name = String(form.get("name") ?? "").trim();
+  const district = String(form.get("district") ?? "").trim();
   const neighborhood = String(form.get("neighborhood") ?? "").trim();
   const slug = String(form.get("slug") ?? "").trim();
   if (!name || name.length > 60) return { ok: false, error: "공간 이름을 60자 이내로 적어 주세요." };
+  if (!district || district.length > 20 || !district.endsWith("구")) {
+    return { ok: false, error: "구를 적어 주세요. (예: 마포구)" };
+  }
   if (!neighborhood || neighborhood.length > 60) return { ok: false, error: "동네를 적어 주세요. (예: 마포구 망원동)" };
   if (!SLUG_PATTERN.test(slug)) return { ok: false, error: "주소용 이름은 영문 소문자·숫자·하이픈 3~40자로 적어 주세요." };
-  return { ok: true, value: { name, neighborhood, slug, ownerConsent: form.get("ownerConsent") === "on" } };
+  return { ok: true, value: { name, district, neighborhood, slug, ownerConsent: form.get("ownerConsent") === "on" } };
 }
 
 export async function slugTaken(db: D1Database, slug: string): Promise<boolean> {
@@ -30,14 +35,14 @@ export async function slugTaken(db: D1Database, slug: string): Promise<boolean> 
 
 export async function createSpace(
   db: D1Database,
-  input: { name: string; neighborhood: string; slug: string; ownerConsent: boolean; consentFileKey: string | null },
+  input: { name: string; district: string; neighborhood: string; slug: string; ownerConsent: boolean; consentFileKey: string | null },
   now = Date.now(),
 ): Promise<number> {
   const res = await db
     .prepare(
-      "INSERT INTO spaces (name, neighborhood, slug, owner_consent, consent_file_key, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+      "INSERT INTO spaces (name, district, neighborhood, slug, owner_consent, consent_file_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
     )
-    .bind(input.name, input.neighborhood, input.slug, input.ownerConsent ? 1 : 0, input.consentFileKey, now)
+    .bind(input.name, input.district, input.neighborhood, input.slug, input.ownerConsent ? 1 : 0, input.consentFileKey, now)
     .run();
   return res.meta.last_row_id;
 }

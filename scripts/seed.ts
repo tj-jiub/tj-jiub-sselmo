@@ -1,4 +1,5 @@
-// Local seed: 1 space, 60 survey responses, 3 applications.
+// Local seed: 6 spaces (mangwon-01 has 60 survey responses + 3 applications; the others
+// exist for the /find matching flow), all with deterministic data.
 // Usage: node scripts/seed.ts > .wrangler/seed.sql (wired up as `npm run db:seed`).
 // Wipes existing rows first — local development only.
 import { BUSINESS_TYPES, RESPONDENT_TYPE, SPEND_RANGE, VISIT_FREQUENCY, VISIT_TIME } from "../app/lib/survey.ts";
@@ -20,7 +21,7 @@ const out: string[] = [
   "DELETE FROM survey_contacts;",
   "DELETE FROM survey_responses;",
   "DELETE FROM spaces;",
-  `INSERT INTO spaces (name, neighborhood, slug, owner_consent, consent_file_key, created_at) VALUES ('망원동 1층 코너 공실', '마포구 망원동', 'mangwon-01', 1, NULL, ${now - 20 * day});`,
+  `INSERT INTO spaces (name, district, neighborhood, slug, owner_consent, consent_file_key, created_at) VALUES ('망원동 1층 코너 공실', '마포구', '마포구 망원동', 'mangwon-01', 1, NULL, ${now - 20 * day});`,
 ];
 
 // Skew demand so the report has a visible ranking.
@@ -41,6 +42,43 @@ for (let i = 0; i < 60; i++) {
   out.push(
     `INSERT INTO survey_responses (space_id, answers, device_hash, created_at) VALUES (${space}, ${q(JSON.stringify(answers))}, ${q(`seed-device-${i}`)}, ${now - Math.floor(rand() * 14 * day)});`,
   );
+}
+
+// Matching-flow spaces. Each type gets a cyclic window of respondents so the
+// per-type counts (M) are exact and no response has more than 3 types.
+type Extra = { slug: string; name: string; district: string; neighborhood: string; consent: 0 | 1; total: number; counts: Record<string, number> };
+const extraSpaces: Extra[] = [
+  { slug: "seongsu-01", name: "성수동 골목 1층 공실", district: "성동구", neighborhood: "성동구 성수동", consent: 1, total: 120, counts: { "아이스크림·디저트": 100, 카페: 54, 베이커리: 41 } },
+  { slug: "seongsu-02", name: "금호동 역세권 1층 공실", district: "성동구", neighborhood: "성동구 금호동", consent: 1, total: 73, counts: { 반찬가게: 31, 세탁소: 22, 분식: 18 } },
+  // Under the 50-response threshold: must show as "집계 중" without numbers.
+  { slug: "yongsan-01", name: "이태원동 2층 공실", district: "용산구", neighborhood: "용산구 이태원동", consent: 1, total: 20, counts: { 베이커리: 8, 카페: 5 } },
+  // No building-owner consent: must never appear on any public page.
+  { slug: "hidden-01", name: "연희동 비공개 공실", district: "서대문구", neighborhood: "서대문구 연희동", consent: 0, total: 80, counts: { 베이커리: 70, 꽃집: 30 } },
+];
+for (const [k, sp] of extraSpaces.entries()) {
+  out.push(
+    `INSERT INTO spaces (name, district, neighborhood, slug, owner_consent, consent_file_key, created_at) VALUES (${q(sp.name)}, ${q(sp.district)}, ${q(sp.neighborhood)}, ${q(sp.slug)}, ${sp.consent}, NULL, ${now - (18 - k) * day});`,
+  );
+  const picks: string[][] = Array.from({ length: sp.total }, () => []);
+  let offset = 0;
+  for (const [type, count] of Object.entries(sp.counts)) {
+    for (let j = 0; j < count; j++) picks[(offset + j) % sp.total].push(type);
+    offset += Math.floor(sp.total / 3);
+  }
+  for (const [i, types] of picks.entries()) {
+    if (types.length > 3) throw new Error(`${sp.slug}: response ${i} has ${types.length} types`);
+    const answers = {
+      businessTypes: types,
+      businessTypeOther: null,
+      visitFrequency: VISIT_FREQUENCY[i % VISIT_FREQUENCY.length].value,
+      spendRange: SPEND_RANGE[i % SPEND_RANGE.length].value,
+      visitTime: VISIT_TIME[i % VISIT_TIME.length].value,
+      respondentType: RESPONDENT_TYPE[i % RESPONDENT_TYPE.length].value,
+    };
+    out.push(
+      `INSERT INTO survey_responses (space_id, answers, device_hash, created_at) VALUES ((SELECT id FROM spaces WHERE slug = ${q(sp.slug)}), ${q(JSON.stringify(answers))}, ${q(`seed-${sp.slug}-${i}`)}, ${now - (i % 14) * day});`,
+    );
+  }
 }
 
 out.push(

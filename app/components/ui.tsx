@@ -14,7 +14,7 @@ export function NavBar() {
           썰모
         </Link>
         <nav className="flex gap-5 text-sm text-muted lg:gap-7">
-          <Link to="/spaces" className="hover:text-ink">
+          <Link to="/find" className="hover:text-ink">
             공실 찾기
           </Link>
           <Link to="/admin/login" className="hover:text-ink">

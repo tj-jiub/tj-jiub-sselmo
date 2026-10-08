@@ -16,8 +16,8 @@ const answers: SurveyAnswers = {
 
 async function setup() {
   const db = createTestDb();
-  const a = await createSpace(db, { name: "A", neighborhood: "n", slug: "a-space", ownerConsent: true, consentFileKey: null });
-  const b = await createSpace(db, { name: "B", neighborhood: "n", slug: "b-space", ownerConsent: true, consentFileKey: null });
+  const a = await createSpace(db, { name: "A", district: "마포구", neighborhood: "n", slug: "a-space", ownerConsent: true, consentFileKey: null });
+  const b = await createSpace(db, { name: "B", district: "마포구", neighborhood: "n", slug: "b-space", ownerConsent: true, consentFileKey: null });
   return { db, a, b };
 }
 

@@ -60,3 +60,23 @@ test("result page → paid feedback request shows transfer details", async ({ pa
   await expect(page.getByText("입금 안내 · 사업계획서 검토 및 피드백 서비스")).toBeVisible();
   await expect(page.getByText("10,000원")).toBeVisible();
 });
+
+test("founder matching: by item and by district", async ({ page }) => {
+  // Yes → 먹거리 → 베이커리 → ranked card with the fixed phrase.
+  await page.goto("/find");
+  await page.getByRole("link", { name: /네, 정했어요/ }).click();
+  await page.getByRole("heading", { name: "어떤 가게를 하려고 하나요?" }).waitFor();
+  const food = page.locator("section", { has: page.getByRole("heading", { name: "먹거리" }) });
+  await food.getByRole("link", { name: "베이커리", exact: true }).click();
+  await expect(page.getByText(/응답자 \d+명 중 \d+명이 이용 의향/).first()).toBeVisible();
+  // The apply link carries the type and the form opens prefilled.
+  await page.getByRole("link", { name: "이 업종으로 지원해보기" }).first().click();
+  await expect(page.getByLabel("하고 싶은 업종")).toHaveValue("베이커리");
+
+  // No → 성동구 → each space's #1 type (the non-consented space never shows).
+  await page.goto("/find");
+  await page.getByRole("link", { name: /아직이에요/ }).click();
+  await page.getByRole("link", { name: /성동구/ }).click();
+  await expect(page.getByText("1위 아이스크림·디저트")).toBeVisible();
+  await expect(page.getByText("연희동 비공개 공실")).toHaveCount(0);
+});
