@@ -34,7 +34,7 @@ export function form(overrides: Record<string, string | null> = {}) {
 
 export async function seeded(opts: { consentBrokerIntro?: boolean } = {}) {
   const db = createTestDb();
-  const spaceId = await createSpace(db, { name: "A", neighborhood: "n", slug: "a-space", ownerConsent: true, consentFileKey: null });
+  const spaceId = await createSpace(db, { name: "A", district: "마포구", neighborhood: "n", slug: "a-space", ownerConsent: true, consentFileKey: null });
   const r = parseApplication(form(opts.consentBrokerIntro ? { consentBrokerIntro: "on" } : {}));
   if (!r.ok) throw new Error(r.error);
   const { id, token } = await createApplication(db, spaceId, r.value, null, 123);

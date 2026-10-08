@@ -37,6 +37,7 @@ export default function AdminSpaceNew({ actionData }: Route.ComponentProps) {
       </Title>
       <Form method="post" encType="multipart/form-data">
         <TextInput label="공간 이름" name="name" placeholder="예: 망원동 1층 코너 공실" required />
+        <TextInput label="구" name="district" placeholder="예: 마포구" maxLength={20} pattern=".*구" required />
         <TextInput label="동네 (동 단위까지만)" name="neighborhood" placeholder="예: 마포구 망원동" required />
         <TextInput
           label="주소용 이름 (QR 링크에 쓰여요)"
