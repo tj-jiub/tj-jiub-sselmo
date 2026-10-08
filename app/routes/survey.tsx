@@ -2,7 +2,7 @@ import { data, Form, Link } from "react-router";
 import type { Route } from "./+types/survey";
 import { getPublicSpace } from "~/lib/spaces.server";
 import {
-  BUSINESS_TYPES,
+  BUSINESS_CATEGORIES,
   OTHER,
   parseSurvey,
   parseSurveyContact,
@@ -14,7 +14,7 @@ import {
 import { hashDeviceId, saveContact, saveResponse } from "~/lib/surveys.server";
 import { getDeviceId } from "~/lib/device.server";
 import { CONSENTS } from "~/lib/policy";
-import { Choice, Consent, ErrorNote, Question, Shell, SubmitButton, TextInput, Title } from "~/components/ui";
+import { btnGhost, Card, Choice, Consent, ErrorNote, Hl, Question, Shell, SubmitButton, TextInput, Title } from "~/components/ui";
 
 export const meta: Route.MetaFunction = ({ data }) => [{ title: data ? `${data.name} — 썰모 설문` : "썰모" }];
 
@@ -59,16 +59,16 @@ export default function Survey({ loaderData, actionData }: Route.ComponentProps)
 
   if (actionData?.status === "saved" || actionData?.status === "cooldown") {
     return (
-      <Shell>
+      <Shell nav={false}>
         <Title eyebrow={neighborhood}>
           {actionData.status === "saved" ? "응답이 저장됐어요. 고마워요!" : "이미 응답하셨어요."}
         </Title>
-        <p className="text-sm leading-relaxed text-muted">
+        <p className="text-muted">
           {actionData.status === "saved"
             ? "응답이 50명 이상 모이면 결과를 공개해요."
             : "같은 기기에서는 24시간에 한 번 참여할 수 있어요."}
         </p>
-        <Link to={`/r/${slug}`} className="mt-8 block rounded-lg border border-ink py-3.5 text-center font-semibold">
+        <Link to={`/r/${slug}`} className={`${btnGhost} mt-8 w-full`}>
           결과 보러 가기
         </Link>
       </Shell>
@@ -76,16 +76,28 @@ export default function Survey({ loaderData, actionData }: Route.ComponentProps)
   }
 
   return (
-    <Shell>
+    <Shell nav={false}>
       <Title eyebrow={neighborhood} sub="30초면 끝나요. 이름은 묻지 않아요.">
-        {name}에 어떤 가게가 생기면 좋을까요?
+        {name}에 <Hl>어떤 가게</Hl>가 생기면 좋을까요?
       </Title>
       <Form method="post">
-        <Question label="생기면 이용할 가게" hint="최대 3개">
-          {BUSINESS_TYPES.map((t) => (
-            <Choice key={t} type="checkbox" name="businessTypes" value={t} label={t} />
+        <Question label="생기면 이용할 가게" hint="최대 3개" stack>
+          {BUSINESS_CATEGORIES.map((c) => (
+            <Card key={c.name} className="!p-4">
+              <h3 className="text-cap font-bold tracking-[0.06em] text-muted">{c.name}</h3>
+              <div className="mt-2.5 flex flex-wrap gap-2">
+                {c.types.map((t) => (
+                  <Choice key={t} type="checkbox" name="businessTypes" value={t} label={t} />
+                ))}
+              </div>
+            </Card>
           ))}
-          <Choice type="checkbox" name="businessTypes" value={OTHER} label={OTHER} />
+          <Card className="!p-4">
+            <h3 className="text-cap font-bold tracking-[0.06em] text-muted">그 밖에</h3>
+            <div className="mt-2.5 flex flex-wrap gap-2">
+              <Choice type="checkbox" name="businessTypes" value={OTHER} label={OTHER} />
+            </div>
+          </Card>
         </Question>
         <TextInput label="기타를 골랐다면 적어 주세요" name="businessTypeOther" maxLength={40} placeholder="예: 아이스크림집" />
         <Question label="얼마나 자주 갈 것 같나요?">{options(VISIT_FREQUENCY, "visitFrequency")}</Question>
@@ -93,8 +105,8 @@ export default function Survey({ loaderData, actionData }: Route.ComponentProps)
         <Question label="주로 가는 시간대">{options(VISIT_TIME, "visitTime")}</Question>
         <Question label="나는">{options(RESPONDENT_TYPE, "respondentType")}</Question>
 
-        <details className="mb-8 rounded-lg border border-line p-4">
-          <summary className="cursor-pointer text-sm font-medium">가게가 생기면 소식 받기 (선택)</summary>
+        <details className="mb-8 rounded-[14px] border border-line p-4">
+          <summary className="flex min-h-12 cursor-pointer items-center font-medium">가게가 생기면 소식 받기 (선택)</summary>
           <div className="mt-4">
             <TextInput label="연락처 (전화번호 또는 이메일)" name="contact" maxLength={100} />
             <Consent name="contactConsent" label={CONSENTS.surveyContact.label} detail={CONSENTS.surveyContact.detail} />

@@ -3,7 +3,7 @@ import type { Route } from "./+types/public-report";
 import { getPublicSpace } from "~/lib/spaces.server";
 import { listAnswers } from "~/lib/surveys.server";
 import { aggregate, formatIntent, isPublicReady } from "~/lib/report";
-import { Shell, Title } from "~/components/ui";
+import { btnPrimary, Card, Hl, Shell, Title } from "~/components/ui";
 
 export async function loader({ params, context }: Route.LoaderArgs) {
   const env = context.cloudflare.env;
@@ -22,23 +22,34 @@ export async function loader({ params, context }: Route.LoaderArgs) {
 export default function PublicReport({ loaderData }: Route.ComponentProps) {
   const { name, neighborhood, slug, lines } = loaderData;
   return (
-    <Shell>
-      <Title eyebrow={neighborhood}>{name}, 동네가 원하는 가게</Title>
-      {lines === null ? (
-        <p className="py-16 text-center text-lg font-semibold">집계 중</p>
-      ) : (
-        <ul className="divide-y divide-line">
-          {lines.map((l) => (
-            <li key={l.type} className="py-4">
-              <p className="font-semibold">{l.type}</p>
-              <p className="mt-1 text-sm text-muted">{l.text}</p>
-            </li>
-          ))}
-        </ul>
-      )}
-      <Link to={`/apply/${slug}`} className="mt-10 block rounded-lg bg-ink py-3.5 text-center font-semibold text-paper">
-        이 자리에 창업 신청하기
-      </Link>
+    <Shell wide>
+      <Title eyebrow={neighborhood}>
+        {name}, <Hl>동네가 원하는 가게</Hl>
+      </Title>
+      <div className="split">
+        {lines === null ? (
+          <Card className="py-16 text-center">
+            <p className="text-h3 font-bold">집계 중</p>
+          </Card>
+        ) : (
+          <ul className="grid gap-3">
+            {lines.map((l, i) => (
+              <li key={l.type}>
+                <Card top={i === 0} className="!py-3.5">
+                  <p className="text-lg font-bold">{l.type}</p>
+                  <p className="mt-1 text-[15px]">{l.text}</p>
+                </Card>
+              </li>
+            ))}
+          </ul>
+        )}
+        <aside className="rounded-[14px] border border-line bg-soft p-5 lg:p-7">
+          <p className="mb-4 font-bold">이 자리에서 창업을 해보고 싶다면</p>
+          <Link to={`/apply/${slug}`} className={`${btnPrimary} w-full`}>
+            이 자리에 창업 신청하기
+          </Link>
+        </aside>
+      </div>
     </Shell>
   );
 }

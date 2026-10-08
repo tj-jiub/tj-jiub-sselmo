@@ -3,7 +3,7 @@ import type { Route } from "./+types/result";
 import { getResultByToken, requestFeedback } from "~/lib/applications.server";
 import { verdictLabel } from "~/lib/verdicts";
 import { BANK_TRANSFER, CONSENTS, FEE_AMOUNT_KRW, FEE_SERVICE_NAME } from "~/lib/policy";
-import { Consent, ErrorNote, Section, Shell, SubmitButton, Title } from "~/components/ui";
+import { Card, Consent, ErrorNote, Section, Shell, SubmitButton, Title } from "~/components/ui";
 import { CopyButton } from "~/components/CopyButton";
 
 export const meta: Route.MetaFunction = () => [{ title: "검토 결과 — 썰모" }, { name: "robots", content: "noindex" }];
@@ -32,7 +32,7 @@ export default function Result({ loaderData, actionData }: Route.ComponentProps)
     return (
       <Shell>
         <Title eyebrow={r.spaceName}>아직 검토 중이에요</Title>
-        <p className="text-sm text-muted">검토가 끝나면 이 링크에서 결과를 볼 수 있어요.</p>
+        <p className="text-muted">검토가 끝나면 이 링크에서 결과를 볼 수 있어요.</p>
       </Shell>
     );
   }
@@ -40,16 +40,16 @@ export default function Result({ loaderData, actionData }: Route.ComponentProps)
   return (
     <Shell>
       <Title eyebrow={r.spaceName}>{r.contactName}님, 검토 결과가 나왔어요</Title>
-      <div className="mb-8 rounded-xl border border-ink p-4">
-        <p className="text-xs font-bold tracking-wide text-accent">{r.verdictLabel}</p>
-        <p className="mt-1.5 whitespace-pre-wrap text-sm leading-relaxed">{r.summary}</p>
-      </div>
+      <Card top className="mb-8">
+        <p className="text-cap font-bold tracking-wide">{r.verdictLabel}</p>
+        <p className="mt-1.5 whitespace-pre-wrap">{r.summary}</p>
+      </Card>
 
       {r.feedbackSent ? (
-        <p className="text-sm text-muted">서면 피드백을 이메일로 보냈어요. 메일함을 확인해 주세요.</p>
+        <p className="text-muted">서면 피드백을 이메일로 보냈어요. 메일함을 확인해 주세요.</p>
       ) : r.feedbackRequested ? (
         <Section title={`입금 안내 · ${FEE_SERVICE_NAME}`}>
-          <dl className="grid grid-cols-[5rem_1fr] gap-y-1.5 text-sm">
+          <dl className="grid grid-cols-[5rem_1fr] gap-y-1.5">
             <dt className="text-muted">금액</dt>
             <dd className="font-semibold">{won(FEE_AMOUNT_KRW)}</dd>
             <dt className="text-muted">입금 계좌</dt>
@@ -59,7 +59,7 @@ export default function Result({ loaderData, actionData }: Route.ComponentProps)
             <dt className="text-muted">예금주</dt>
             <dd>{BANK_TRANSFER.holder}</dd>
           </dl>
-          <p className="mt-3 text-xs leading-relaxed text-muted">
+          <p className="mt-3 text-cap text-muted">
             입금자명은 신청서의 이름({r.contactName})과 같게 해 주세요. 입금이 확인되면 이메일로 피드백 문서를 보내드려요.
           </p>
           <div className="mt-5">
@@ -69,11 +69,11 @@ export default function Result({ loaderData, actionData }: Route.ComponentProps)
       ) : (
         <Form method="post">
           <Section title={`${FEE_SERVICE_NAME} 받기 (선택)`}>
-            <p className="text-2xl font-bold tabular-nums">{won(FEE_AMOUNT_KRW)}</p>
-            <p className="mt-2 text-sm leading-relaxed text-muted">
+            <p className="text-h3 font-bold tabular-nums">{won(FEE_AMOUNT_KRW)}</p>
+            <p className="mt-2 text-muted">
               동네 설문 결과를 바탕으로 사업계획서를 항목별로 짚은 피드백 문서를 이메일로 보내드려요.
             </p>
-            <ul className="mb-4 mt-2 list-disc pl-5 text-xs leading-relaxed text-muted">
+            <ul className="mb-4 mt-2 list-disc pl-5 text-cap text-muted">
               <li>업종·가격·시간대가 동네 수요와 맞는지</li>
               <li>사업계획서에서 보완할 부분</li>
             </ul>
@@ -81,7 +81,7 @@ export default function Result({ loaderData, actionData }: Route.ComponentProps)
           </Section>
           <ErrorNote message={actionData?.error} />
           <SubmitButton>피드백 신청하기</SubmitButton>
-          <p className="mt-3 text-center text-xs text-muted">신청하지 않아도 위 결과는 계속 볼 수 있어요.</p>
+          <p className="mt-3 text-center text-cap text-muted">신청하지 않아도 위 결과는 계속 볼 수 있어요.</p>
         </Form>
       )}
     </Shell>

@@ -52,7 +52,7 @@ export async function action({ request, params, context }: Route.ActionArgs) {
 }
 
 const date = (ms: number) => new Date(ms).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
-const field = "w-full rounded-lg border border-line px-3 py-2.5 focus:border-ink focus:outline-none";
+const field = "w-full rounded-[10px] border border-line px-3 py-2.5 focus:border-ink focus:outline-none";
 
 export default function AdminApplication({ loaderData, actionData }: Route.ComponentProps) {
   const { app, intros, resultUrl } = loaderData;
@@ -60,7 +60,7 @@ export default function AdminApplication({ loaderData, actionData }: Route.Compo
   const saved = actionData?.saved;
 
   return (
-    <Shell wide>
+    <Shell wide nav={false}>
       <Title eyebrow={app.space_name} sub={`접수 ${date(app.created_at)}`}>
         {app.contact_name} · {app.business_type}
       </Title>
@@ -85,7 +85,7 @@ export default function AdminApplication({ loaderData, actionData }: Route.Compo
                 )}
               </dd>
             </dl>
-            <p className="mt-4 whitespace-pre-wrap rounded-lg border border-line p-4 text-sm leading-relaxed">{app.plan_text}</p>
+            <p className="mt-4 whitespace-pre-wrap rounded-[14px] border border-line p-4 text-sm">{app.plan_text}</p>
           </Section>
 
           <Section title="동의 기록">
@@ -108,7 +108,7 @@ export default function AdminApplication({ loaderData, actionData }: Route.Compo
                   {VERDICTS.map((v) => (
                     <label key={v.value} className="cursor-pointer">
                       <input type="radio" name="verdict" value={v.value} defaultChecked={app.result_verdict === v.value} className="peer sr-only" />
-                      <span className="block rounded-full border border-line px-3.5 py-1.5 peer-checked:border-ink peer-checked:bg-ink peer-checked:text-paper">
+                      <span className="block rounded-full border border-line px-3.5 py-1.5 peer-checked:border-yellow-deep peer-checked:bg-yellow">
                         {v.label}
                       </span>
                     </label>
@@ -123,7 +123,7 @@ export default function AdminApplication({ loaderData, actionData }: Route.Compo
                 <span className="mb-1.5 block font-medium">참고 점수 (참고용, 0~100 · 신청자에게 안 보여요)</span>
                 <input name="referenceScore" inputMode="numeric" defaultValue={app.reference_score ?? ""} className={`${field} w-28`} />
               </label>
-              <div className="flex items-center gap-2 rounded-lg bg-[#f6f6f6] px-3 py-2.5">
+              <div className="flex items-center gap-2 rounded-[10px] bg-soft px-3 py-2.5">
                 <span className="min-w-0 flex-1 truncate text-xs">{resultUrl}</span>
                 <CopyButton text={resultUrl} label="링크 복사" />
               </div>
@@ -131,7 +131,7 @@ export default function AdminApplication({ loaderData, actionData }: Route.Compo
                 <input type="checkbox" name="resultSent" defaultChecked={app.result_sent === 1} className="size-4 accent-ink" />
                 결과 메일 보냄 (직접 보낸 뒤 체크)
               </label>
-              <button className="rounded-lg bg-ink px-4 py-2 font-semibold text-paper">저장</button>
+              <button className="rounded-[10px] border border-ink bg-yellow px-4 py-2 font-bold text-ink">저장</button>
               {saved === "result" && <span className="ml-3 text-muted">저장했어요.</span>}
             </Form>
           </Section>
@@ -153,11 +153,11 @@ export default function AdminApplication({ loaderData, actionData }: Route.Compo
                   <input type="checkbox" name="feedbackSent" defaultChecked={app.feedback_sent === 1} className="size-4 accent-ink" />
                   피드백 발송함 (직접 보낸 뒤 체크)
                 </label>
-                <button className="rounded-lg bg-ink px-4 py-2 font-semibold text-paper">저장</button>
+                <button className="rounded-[10px] border border-ink bg-yellow px-4 py-2 font-bold text-ink">저장</button>
                 {saved === "feedback" && <span className="ml-3 text-muted">저장했어요.</span>}
               </Form>
             ) : (
-              <p className="rounded-lg border border-dashed border-line p-3 text-sm text-muted">아직 피드백을 신청하지 않았어요.</p>
+              <p className="rounded-[10px] border border-dashed border-line p-3 text-sm text-muted">아직 피드백을 신청하지 않았어요.</p>
             )}
           </Section>
 
@@ -167,16 +167,16 @@ export default function AdminApplication({ loaderData, actionData }: Route.Compo
                 <input type="hidden" name="intent" value="add-intro" />
                 <label>
                   <span className="mb-1 block">중개사 이름</span>
-                  <input name="brokerName" required maxLength={60} className="rounded-lg border border-line px-3 py-2" />
+                  <input name="brokerName" required maxLength={60} className="rounded-[10px] border border-line min-h-10 px-3 py-2" />
                 </label>
                 <label>
                   <span className="mb-1 block">소개한 날짜</span>
-                  <input name="introducedOn" type="date" required className="rounded-lg border border-line px-3 py-2" />
+                  <input name="introducedOn" type="date" required className="rounded-[10px] border border-line min-h-10 px-3 py-2" />
                 </label>
-                <button className="rounded-lg bg-ink px-4 py-2 font-semibold text-paper">기록</button>
+                <button className="rounded-[10px] border border-ink bg-yellow px-4 py-2 font-bold text-ink">기록</button>
               </Form>
             ) : (
-              <p className="mb-4 rounded-lg border border-dashed border-line p-3 text-sm text-muted">
+              <p className="mb-4 rounded-[10px] border border-dashed border-line p-3 text-sm text-muted">
                 신청자가 중개사 소개에 동의하지 않아 기록할 수 없어요.
               </p>
             )}

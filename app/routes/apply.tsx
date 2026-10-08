@@ -4,7 +4,7 @@ import { getPublicSpace } from "~/lib/spaces.server";
 import { createApplication, parseApplication } from "~/lib/applications.server";
 import { checkUpload, storeUpload } from "~/lib/uploads.server";
 import { CONSENTS } from "~/lib/policy";
-import { Consent, ErrorNote, Shell, SubmitButton, TextArea, TextInput, Title } from "~/components/ui";
+import { btnGhost, Consent, ErrorNote, Shell, SubmitButton, TextArea, TextInput, Title } from "~/components/ui";
 
 export const meta: Route.MetaFunction = ({ data }) => [{ title: data ? `${data.name} 창업 신청 — 썰모` : "썰모" }];
 
@@ -35,11 +35,11 @@ export default function Apply({ loaderData, actionData }: Route.ComponentProps) 
     return (
       <Shell>
         <Title eyebrow={loaderData.neighborhood}>신청이 접수됐어요</Title>
-        <p className="text-sm leading-relaxed text-muted">
+        <p className="text-muted">
           검토가 끝나면 <b className="text-ink">{actionData.email}</b>으로 결과 링크를 보내드려요.
         </p>
         <p className="mt-2 text-sm text-muted">메일이 오지 않으면 스팸함도 확인해 주세요.</p>
-        <Link to={`/r/${loaderData.slug}`} className="mt-8 block rounded-lg border border-ink py-3.5 text-center font-semibold">
+        <Link to={`/r/${loaderData.slug}`} className={`${btnGhost} mt-8 w-full`}>
           동네 의견 다시 보기
         </Link>
       </Shell>

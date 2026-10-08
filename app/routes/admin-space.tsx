@@ -6,7 +6,7 @@ import { listAnswers, listContacts } from "~/lib/surveys.server";
 import { aggregate, distribution, formatIntent, PUBLIC_THRESHOLD } from "~/lib/report";
 import { RESPONDENT_TYPE, SPEND_RANGE, VISIT_FREQUENCY, VISIT_TIME } from "~/lib/survey";
 import { QrDownload } from "~/components/QrDownload";
-import { Section, Shell, Title } from "~/components/ui";
+import { btnSmallGhost, Section, Shell, Title } from "~/components/ui";
 
 export async function loader({ request, params, context }: Route.LoaderArgs) {
   const env = context.cloudflare.env;
@@ -44,7 +44,7 @@ export default function AdminSpace({ loaderData }: Route.ComponentProps) {
   const surveyUrl = `${origin}/s/${space.slug}`;
 
   return (
-    <Shell wide>
+    <Shell wide nav={false}>
       <Title eyebrow={space.neighborhood}>{space.name}</Title>
 
       <Section title="건물주 동의">
@@ -63,7 +63,7 @@ export default function AdminSpace({ loaderData }: Route.ComponentProps) {
           <Form method="post">
             <input type="hidden" name="intent" value="set-consent" />
             <input type="hidden" name="consent" value={consented ? "0" : "1"} />
-            <button className="rounded-lg border border-ink px-3 py-1.5">
+            <button className={btnSmallGhost}>
               {consented ? "동의 취소(비공개로)" : "동의 받음(공개하기)"}
             </button>
           </Form>
@@ -81,7 +81,7 @@ export default function AdminSpace({ loaderData }: Route.ComponentProps) {
 
       <Section title={`수요 리포트 · 응답 ${report.total}건`}>
         {report.total < PUBLIC_THRESHOLD && (
-          <p className="mb-3 text-xs text-muted">
+          <p className="mb-3 text-cap text-muted">
             공개 요약은 응답 {PUBLIC_THRESHOLD}건부터 열려요. (현재 {report.total}건)
           </p>
         )}
@@ -95,7 +95,7 @@ export default function AdminSpace({ loaderData }: Route.ComponentProps) {
         </ul>
         {report.others.length > 0 && (
           <div className="mt-6">
-            <h3 className="mb-2 text-xs font-semibold text-muted">기타 응답 (원문)</h3>
+            <h3 className="mb-2 text-cap font-bold text-muted">기타 응답 (원문)</h3>
             <ul className="flex flex-wrap gap-2 text-sm">
               {report.others.map((o, i) => (
                 <li key={i} className="rounded-full border border-line px-3 py-1">
@@ -108,7 +108,7 @@ export default function AdminSpace({ loaderData }: Route.ComponentProps) {
         <div className="mt-8 grid gap-6 sm:grid-cols-2">
           {breakdowns.map((b) => (
             <div key={b.title}>
-              <h3 className="mb-2 text-xs font-semibold text-muted">{b.title}</h3>
+              <h3 className="mb-2 text-cap font-bold text-muted">{b.title}</h3>
               <ul className="text-sm">
                 {b.rows.map((r) => (
                   <li key={r.label} className="flex justify-between py-1">

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { btnSmallGhost } from "~/components/ui";
 
 export function CopyButton({ text, label }: { text: string; label: string }) {
   const [copied, setCopied] = useState(false);
@@ -11,7 +12,7 @@ export function CopyButton({ text, label }: { text: string; label: string }) {
           .then(() => setCopied(true))
           .catch(() => window.prompt("복사해서 쓰세요", text))
       }
-      className="rounded-lg border border-ink px-4 py-2 text-sm font-semibold"
+      className={btnSmallGhost}
     >
       {copied ? "복사했어요" : label}
     </button>

@@ -31,7 +31,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 
 export default function AdminSpaceNew({ actionData }: Route.ComponentProps) {
   return (
-    <Shell>
+    <Shell nav={false}>
       <Title eyebrow="공간 등록" sub="임대료·보증금 등 계약 조건은 입력하지 않아요.">
         새 공실 등록
       </Title>

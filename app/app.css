@@ -1,16 +1,96 @@
 @import "tailwindcss";
 
 @theme {
-  --color-ink: #111111;
+  /* Palette (docs/mockup-matching.html v7). Text is always ink; pastels are fills only. */
+  --color-ink: #1d1d1b;
   --color-paper: #ffffff;
-  --color-muted: #6b6b6b;
-  --color-line: #e6e6e6;
-  --color-accent: #ff5a1f;
-  --font-sans: "Pretendard Variable", Pretendard, system-ui, -apple-system, sans-serif;
+  --color-soft: #fafaf7;
+  --color-muted: #6f6d68;
+  --color-line: #e8e6e1;
+  --color-yellow: #fff0a6;
+  --color-yellow-deep: #f2d65c;
+  --color-green: #d3f0bf;
+  --color-green-deep: #8fcb6e;
+  --color-sel: rgba(255, 221, 87, 0.45);
+
+  --font-sans: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+
+  /* Golden-ratio type scale: 16px base, x1.618 up, /sqrt(phi) down for captions. */
+  --text-cap: 12.6px;
+  --text-cap--line-height: 1.618;
+  --text-h3: 25.9px;
+  --text-h3--line-height: 1.382;
+  --text-h2: 41.9px;
+  --text-h2--line-height: 1.236;
+  --text-h1: 67.8px;
+  --text-h1--line-height: 1.146;
+  --leading-gold: 1.618;
+}
+
+:root {
+  --golden-split: 1.618fr 1fr;
+  --golden-split-rev: 1fr 1.618fr;
+  --selection: rgba(255, 221, 87, 0.45);
 }
 
 html,
 body {
   background: var(--color-paper);
   color: var(--color-ink);
+}
+
+body {
+  font-size: 16px;
+  line-height: 1.618;
+  /* Korean wraps only between words, never inside one. */
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+p,
+li {
+  text-wrap: pretty;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+::selection {
+  background: var(--selection);
+  color: var(--color-ink);
+}
+
+/* Highlight: looks like a mouse-drag text selection, a solid block over the full line box. */
+mark.hl {
+  background: var(--selection);
+  color: inherit;
+  padding: 0;
+  border-radius: 0;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+/* Golden split layouts (61.8 / 38.2), PC only. */
+.split {
+  display: grid;
+  gap: 24px;
+}
+@media (min-width: 1024px) {
+  .split {
+    grid-template-columns: var(--golden-split);
+    gap: 48px;
+    align-items: start;
+  }
+  .split-rev {
+    grid-template-columns: var(--golden-split-rev);
+  }
 }
