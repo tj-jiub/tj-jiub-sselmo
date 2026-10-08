@@ -206,8 +206,8 @@ describe("parseTypePrefill", () => {
   it("ignores empty, missing and over-long values", () => {
     expect(parseTypePrefill(null)).toBe("");
     expect(parseTypePrefill("   ")).toBe("");
-    expect(parseTypePrefill("가".repeat(61))).toBe("");
-    expect(parseTypePrefill("가".repeat(60))).toHaveLength(60);
+    expect(parseTypePrefill("가".repeat(41))).toBe("");
+    expect(parseTypePrefill("가".repeat(40))).toHaveLength(40);
   });
   it("strips control characters", () => {
     expect(parseTypePrefill("카페\u0000\n")).toBe("카페");

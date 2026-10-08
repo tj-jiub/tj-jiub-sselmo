@@ -140,8 +140,8 @@ export function objectParticle(word: string): "을" | "를" {
 }
 
 // ?type= on /apply/:slug. Cards link with known types, but the URL is user
-// input: trim, drop control characters, ignore anything over 60 chars.
+// input: trim, drop control characters, ignore anything over 40 chars (the apply form limit).
 export function parseTypePrefill(raw: string | null): string {
   const value = (raw ?? "").replace(/\p{Cc}/gu, "").trim();
-  return value.length > 60 ? "" : value;
+  return value.length > 40 ? "" : value;
 }

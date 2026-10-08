@@ -175,7 +175,7 @@ function Pending({ spaces, type }: { spaces: PendingSpace[]; type: string | null
       <ul className="mt-2 grid gap-2">
         {spaces.map((s) => (
           <li key={s.slug} className="text-muted">
-            {s.neighborhood} · {s.name} — 의견이 50명 넘게 모이면 숫자를 보여드려요.{" "}
+            {s.neighborhood} · {s.name} — 의견이 50명이 모이면 숫자를 보여드려요.{" "}
             <Link to={type ? `/apply/${s.slug}?type=${encodeURIComponent(type)}` : `/apply/${s.slug}`} className="underline">
               그래도 지원하기
             </Link>
