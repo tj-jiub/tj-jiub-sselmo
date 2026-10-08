@@ -138,3 +138,10 @@ export function objectParticle(word: string): "을" | "를" {
   if (code < 0 || code > 11171) return "를";
   return code % 28 === 0 ? "를" : "을";
 }
+
+// ?type= on /apply/:slug. Cards link with known types, but the URL is user
+// input: trim, drop control characters, ignore anything over 60 chars.
+export function parseTypePrefill(raw: string | null): string {
+  const value = (raw ?? "").replace(/\p{Cc}/gu, "").trim();
+  return value.length > 60 ? "" : value;
+}

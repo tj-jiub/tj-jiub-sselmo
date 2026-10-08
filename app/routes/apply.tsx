@@ -4,14 +4,15 @@ import { getPublicSpace } from "~/lib/spaces.server";
 import { createApplication, parseApplication } from "~/lib/applications.server";
 import { checkUpload, storeUpload } from "~/lib/uploads.server";
 import { CONSENTS } from "~/lib/policy";
+import { parseTypePrefill } from "~/lib/matching";
 import { Consent, ErrorNote, Shell, SubmitButton, TextArea, TextInput, Title } from "~/components/ui";
 
 export const meta: Route.MetaFunction = ({ data }) => [{ title: data ? `${data.name} 창업 신청 — 썰모` : "썰모" }];
 
-export async function loader({ params, context }: Route.LoaderArgs) {
+export async function loader({ request, params, context }: Route.LoaderArgs) {
   const space = await getPublicSpace(context.cloudflare.env.DB, params.slug);
   if (!space) throw new Response("Not found", { status: 404 });
-  return { name: space.name, neighborhood: space.neighborhood, slug: space.slug };
+  return { name: space.name, neighborhood: space.neighborhood, slug: space.slug, prefillType: parseTypePrefill(new URL(request.url).searchParams.get("type")) };
 }
 
 export async function action({ request, params, context }: Route.ActionArgs) {
@@ -52,7 +53,7 @@ export default function Apply({ loaderData, actionData }: Route.ComponentProps) 
         {loaderData.name} 창업 신청
       </Title>
       <Form method="post" encType="multipart/form-data">
-        <TextInput label="하고 싶은 업종" name="businessType" maxLength={40} placeholder="예: 젤라또 가게" required />
+        <TextInput label="하고 싶은 업종" name="businessType" defaultValue={loaderData.prefillType} maxLength={40} placeholder="예: 젤라또 가게" required />
         <TextArea label="사업계획" name="planText" maxLength={5000} placeholder="누구에게, 무엇을, 어떻게 팔지 자유롭게 적어 주세요." required />
         <label className="mb-5 block">
           <span className="mb-1.5 block text-sm font-medium">사업계획서 파일 (선택, 10MB 이하)</span>

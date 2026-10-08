@@ -102,3 +102,13 @@ export function ErrorNote({ message }: { message?: string | null }) {
     </p>
   );
 }
+
+// TEMP stubs on wip/matching only; worker 1's versions win on merge.
+export function Hl({ children }: { children: ReactNode }) {
+  return <mark className="bg-yellow text-ink">{children}</mark>;
+}
+
+export function Card({ top = false, selected = false, children }: { top?: boolean; selected?: boolean; children: ReactNode }) {
+  const tone = top ? "border-green-deep" : selected ? "border-yellow-deep bg-yellow" : "border-line";
+  return <div className={`rounded-xl border p-4 md:p-5 ${tone}`}>{children}</div>;
+}

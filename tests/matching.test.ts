@@ -196,3 +196,20 @@ describe("headline helpers", () => {
     expect(objectParticle("아이스크림")).toBe("을");
   });
 });
+
+import { parseTypePrefill } from "~/lib/matching";
+
+describe("parseTypePrefill", () => {
+  it("returns a trimmed value", () => {
+    expect(parseTypePrefill(" 베이커리 ")).toBe("베이커리");
+  });
+  it("ignores empty, missing and over-long values", () => {
+    expect(parseTypePrefill(null)).toBe("");
+    expect(parseTypePrefill("   ")).toBe("");
+    expect(parseTypePrefill("가".repeat(61))).toBe("");
+    expect(parseTypePrefill("가".repeat(60))).toHaveLength(60);
+  });
+  it("strips control characters", () => {
+    expect(parseTypePrefill("카페\u0000\n")).toBe("카페");
+  });
+});
