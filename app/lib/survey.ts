@@ -16,6 +16,15 @@ export const BUSINESS_TYPES = [
   "스터디카페",
   "필라테스·요가",
 ] as const;
+// Miller's law: 10 types are shown as 3 category cards of at most 5 each.
+export const BUSINESS_CATEGORIES: ReadonlyArray<{ name: string; types: readonly (typeof BUSINESS_TYPES)[number][] }> = [
+  { name: "먹거리", types: ["카페", "베이커리", "아이스크림·디저트", "분식", "반찬가게"] },
+  { name: "생활", types: ["세탁소", "꽃집"] },
+  { name: "배우기·운동", types: ["공방", "스터디카페", "필라테스·요가"] },
+];
+export function categoryOf(type: string): string | null {
+  return BUSINESS_CATEGORIES.find((c) => (c.types as readonly string[]).includes(type))?.name ?? null;
+}
 export const OTHER = "기타";
 export const MAX_BUSINESS_TYPES = 3;
 
