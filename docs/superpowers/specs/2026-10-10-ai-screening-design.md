@@ -109,3 +109,13 @@ For a business type T at a space:
 ## 11. Out of scope (memo for later)
 
 Real payments/fee collection, e-contracts, owner accounts, automated revenue verification (POS), resident pre-support funding, opening-alert sending, demand index product, sponsorships, university programs, owner-paid reports, master-lease model.
+
+## 12. Later: founder business-management SaaS (lock-in) — not in this build
+
+Goal: after opening, 쓸모 트랙 founders manage their shop in 쓸모 (sales, monthly P&L, resident regulars/alerts). This also replaces self-reported revenue for the consulting fee with verified numbers.
+Phased path (feasibility checked 2026-10-10):
+1. **Now (this build):** monthly self-report of revenue and profit/loss in the admin, fee computed automatically.
+2. **Next:** founder-facing monthly entry + receipt/statement upload; simple sales dashboard.
+3. **Card-sales sync:** merchants can already view card approvals via the 여신금융협회 가맹점 매출 통합조회; incumbents (캐시노트 등) aggregate this with merchant consent. Integrating needs a data-aggregator contract or the association's third-party terms — not confirmed for CODEF; must be checked. Never store merchant passwords ourselves.
+4. **POS partnership:** no public open API found for 토스플레이스 POS (data is owner-facing today); requires a partner agreement — later, once there is volume.
+Differentiator vs 캐시노트-type tools: resident demand data + resident regulars/opening alerts for that exact location, tied to the consulting deal. Legal: 신용정보법/개인정보 consent for financial data — `TODO(legal)`.
