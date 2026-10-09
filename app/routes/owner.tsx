@@ -12,7 +12,6 @@ export async function loader({ params, context }: Route.LoaderArgs) {
   return view;
 }
 
-const won = (manwon: number) => `${manwon.toLocaleString("ko-KR")}만원`;
 
 function CandidateRow({ c }: { c: Candidate }) {
   return (
@@ -43,7 +42,7 @@ function CandidateRow({ c }: { c: Candidate }) {
         </p>
       )}
       <p className="sub">
-        {c.track === "ssulmo" ? "쓸모 트랙" : "일반 신청"} · 예상 비용 <span className="num">{won(c.estCostManwon)}</span>
+        {c.track === "ssulmo" ? "쓸모 트랙" : "일반 신청"} · 예상 비용 <span className="num">{c.estCostManwon.toLocaleString("ko-KR")}</span>만원
       </p>
     </FocusRow>
   );

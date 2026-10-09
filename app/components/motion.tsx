@@ -3,7 +3,7 @@
 // useContinuousPage / useFocusSteps and is driven by class names (.rv, .cp-row, .cp-card, [data-say]).
 import { useEffect, useRef, type ElementType, type ReactNode } from "react";
 import { Link } from "react-router";
-import { easedStep, litCount, scrollProgress, splitWords, WHEEL_DELTA } from "~/lib/scroll-typing";
+import { easedStep, litCount, scrollProgress, splitWords, WHEEL_DELTA, wheelPixels } from "~/lib/scroll-typing";
 
 const reducedMotion = () => typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -60,13 +60,27 @@ function setupScrollEffects(root: HTMLElement): () => void {
       c.classList.toggle("dim", !!next && next.getBoundingClientRect().top - c.getBoundingClientRect().top < 120);
     });
   }
-  addEventListener("scroll", update, { passive: true });
-  addEventListener("resize", update);
+  let frame = 0;
+  const schedule = () => {
+    if (!frame) frame = requestAnimationFrame(() => ((frame = 0), update()));
+  };
+  addEventListener("scroll", schedule, { passive: true });
+  addEventListener("resize", schedule);
   update();
   return () => {
-    removeEventListener("scroll", update);
-    removeEventListener("resize", update);
+    cancelAnimationFrame(frame);
+    removeEventListener("scroll", schedule);
+    removeEventListener("resize", schedule);
   };
+}
+
+/** True when the wheel target sits inside an element that can scroll vertically by itself. */
+function inScrollable(node: EventTarget | null): boolean {
+  for (let el = node instanceof HTMLElement ? node : null; el && el !== document.body && el !== document.documentElement; el = el.parentElement) {
+    const oy = getComputedStyle(el).overflowY;
+    if ((oy === "auto" || oy === "scroll") && el.scrollHeight > el.clientHeight) return true;
+  }
+  return false;
 }
 
 /** Eased wheel scrolling (touch and keyboard stay native). Only while the page is mounted. */
@@ -82,15 +96,19 @@ function setupSmoothWheel(): () => void {
     raf = current === target ? 0 : requestAnimationFrame(tick);
   };
   const onWheel = (e: WheelEvent) => {
-    if (e.ctrlKey) return;
-    // Let nested scrollers and open <details> content scroll on their own.
+    // Leave pinch-zoom, horizontal gestures (macOS back/forward swipe) and nested scrollers alone.
+    if (e.ctrlKey || Math.abs(e.deltaX) >= Math.abs(e.deltaY) || inScrollable(e.target)) return;
     e.preventDefault();
-    target = Math.max(0, Math.min(max(), target + e.deltaY * WHEEL_DELTA));
+    target = Math.max(0, Math.min(max(), target + wheelPixels(e.deltaY, e.deltaMode, innerHeight) * WHEEL_DELTA));
     if (!raf) raf = requestAnimationFrame(tick);
   };
-  // Native scrolls (keyboard, touch, anchors) re-sync the animation state.
+  // Native scrolls (keyboard, touch, scrollbar drag, anchors) win: re-sync and stop the animation.
   const onScroll = () => {
-    if (!raf) target = current = scrollY;
+    if (!raf || Math.abs(scrollY - current) > 2) {
+      cancelAnimationFrame(raf);
+      raf = 0;
+      target = current = scrollY;
+    }
   };
   addEventListener("wheel", onWheel, { passive: false });
   addEventListener("scroll", onScroll, { passive: true });
@@ -106,6 +124,7 @@ export function useContinuousPage(ref: React.RefObject<HTMLElement | null>, opts
   useEffect(() => {
     const root = ref.current;
     if (!root) return;
+    document.documentElement.dataset.ready = "1"; // tells the root fallback script that hydration worked
     const offs = [setupReveal(root), setupScrollEffects(root)];
     if (smooth) offs.push(setupSmoothWheel());
     return () => offs.forEach((off) => off());
@@ -189,13 +208,16 @@ export function Say({ label, text }: { label: string; text: string }) {
     <section className="cp-say">
       <div className="cp-wrap">
         <div className="cp-label">{label}</div>
-        <p className="text" data-say aria-label={text}>
-          {words.map((w, i) => (
-            <span key={i} aria-hidden="true">
-              <span className="w">{w}</span>
-              {i < words.length - 1 ? " " : ""}
-            </span>
-          ))}
+        <p className="text" data-say>
+          <span className="sr-only">{text}</span>
+          <span aria-hidden="true">
+            {words.map((w, i) => (
+              <span key={i}>
+                <span className="w">{w}</span>
+                {i < words.length - 1 ? " " : ""}
+              </span>
+            ))}
+          </span>
         </p>
       </div>
     </section>
@@ -357,6 +379,8 @@ export function FocusSteps({ children }: { children: ReactNode }) {
   useEffect(() => {
     const scroller = ref.current;
     if (!scroller) return;
+    document.documentElement.dataset.ready = "1";
+    let cancelled = false;
     const panels = [...scroller.querySelectorAll<HTMLElement>(".cp-panel")];
     const reduce = reducedMotion();
     const duration = reduce ? 0 : 1100;
@@ -381,12 +405,13 @@ export function FocusSteps({ children }: { children: ReactNode }) {
       scroller.style.scrollSnapType = "none"; // snapping would fight the tween
       const start = performance.now();
       const step = (now: number) => {
+        if (cancelled) return;
         const t = Math.min(1, (now - start) / duration);
         scroller.scrollTop = from + (to - from) * easeInOut(t);
         if (t < 1) requestAnimationFrame(step);
         else {
           scroller.style.scrollSnapType = "";
-          setTimeout(() => (busy = false), 250);
+          setTimeout(() => (busy = false), 600); // outlast trackpad inertia
         }
       };
       requestAnimationFrame(step);
@@ -396,7 +421,7 @@ export function FocusSteps({ children }: { children: ReactNode }) {
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       if (busy) return;
-      acc += e.deltaY;
+      acc += wheelPixels(e.deltaY, e.deltaMode, innerHeight);
       clearTimeout(timer);
       timer = setTimeout(() => (acc = 0), 180);
       if (Math.abs(acc) > 40) {
@@ -428,6 +453,7 @@ export function FocusSteps({ children }: { children: ReactNode }) {
     addEventListener("keydown", onKey);
     requestAnimationFrame(() => mark(0));
     return () => {
+      cancelled = true;
       clearTimeout(timer);
       io?.disconnect();
       scroller.removeEventListener("wheel", onWheel);

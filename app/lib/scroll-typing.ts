@@ -31,3 +31,8 @@ export function easedStep(current: number, target: number): number {
   const next = current + (target - current) * WHEEL_LERP;
   return Math.abs(target - next) < 0.5 ? target : next;
 }
+
+/** Wheel delta in pixels: Firefox/Windows report lines (mode 1) or pages (mode 2). */
+export function wheelPixels(deltaY: number, deltaMode: number, vh: number): number {
+  return deltaMode === 1 ? deltaY * 16 : deltaMode === 2 ? deltaY * vh : deltaY;
+}

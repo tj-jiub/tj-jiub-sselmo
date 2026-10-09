@@ -113,7 +113,7 @@ export function DistrictStep({ districts }: { districts: Array<{ district: strin
             {districts.map((d) => (
               <Link key={d.district} to={`?item=no&district=${encodeURIComponent(d.district)}`} className={chipClass}>
                 {d.district}
-                <span className="num text-[15px] text-muted">{d.count}곳</span>
+                <span className="text-[15px] text-muted"><span className="num">{d.count}</span>곳</span>
               </Link>
             ))}
             {districts.length > 0 && (

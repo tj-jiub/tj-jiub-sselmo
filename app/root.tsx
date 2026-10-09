@@ -19,10 +19,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        {/* Arms the reveal/scroll-typing CSS only when JS runs and motion is allowed (no-JS and reduced-motion see everything). */}
+        {/* Arms the reveal/scroll-typing CSS only when JS runs and motion is allowed (no-JS and reduced-motion see everything; if hydration has not run after 5s the class is dropped so content never stays hidden). */}
         <script
           dangerouslySetInnerHTML={{
-            __html: "if(!matchMedia('(prefers-reduced-motion: reduce)').matches)document.documentElement.classList.add('mo')",
+            __html: "var d=document.documentElement;if(!matchMedia('(prefers-reduced-motion: reduce)').matches){d.classList.add('mo');setTimeout(function(){if(!d.dataset.ready)d.classList.remove('mo')},5000)}",
           }}
         />
         <Meta />

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { litCount, scrollProgress, splitWords, easedStep } from "~/lib/scroll-typing";
+import { litCount, scrollProgress, splitWords, easedStep, wheelPixels } from "~/lib/scroll-typing";
 
 describe("scrollProgress(top, height, vh)", () => {
   const vh = 1000; // typing starts when the block top is at 85% of vh, ends around 35%
@@ -46,5 +46,13 @@ describe("easedStep (wheel lerp)", () => {
     expect(easedStep(0, 100)).toBeCloseTo(7.5, 10);
     expect(easedStep(99.7, 100)).toBe(100);
     expect(easedStep(100, 100)).toBe(100);
+  });
+});
+
+describe("wheelPixels", () => {
+  it("normalises line and page wheel modes to pixels", () => {
+    expect(wheelPixels(100, 0, 800)).toBe(100);
+    expect(wheelPixels(3, 1, 800)).toBe(48);
+    expect(wheelPixels(1, 2, 800)).toBe(800);
   });
 });

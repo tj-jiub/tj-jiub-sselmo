@@ -2,7 +2,7 @@ ADMIN_EMAIL=admin@ssulmo.local
 # Dev-only password "ssulmo-dev". Generate your own: node scripts/hash-password.ts <password>
 ADMIN_PASSWORD_HASH=pbkdf2:100000:b374872500d9c9fc6dd42ceaa5449b25:a5dc1e416ffebed57c2e4fe4e9aa0977dfc81b4b1a8b76d12306157a4619ecfe
 SESSION_SECRET=dev-only-change-me
-# AI evaluation (leave ANTHROPIC_API_KEY empty or set EVALUATOR=fake to use the deterministic fake evaluator)
+# AI evaluation. EVALUATOR=fake is for local dev/tests ONLY (never production); without it a missing ANTHROPIC_API_KEY makes evaluations fail
 EVALUATOR=fake
 ANTHROPIC_API_KEY=
 # Result mail via Resend: both must be set, otherwise the admin copies the link by hand

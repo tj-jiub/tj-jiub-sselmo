@@ -155,7 +155,7 @@ test("admin records consulting months: 1% fee in a profit month, 0 in a loss mon
 
 test("recruiting page shows the statement, the fixed demand phrase and the revenue disclaimer", async ({ page }) => {
   await page.goto("/r/seongsu-01");
-  await expect(page.getByText("가게 앞 QR로 모은 주민들의 목소리로, 비어 있는 이 자리에 꼭 맞는 가게와 사장님을 찾아요.")).toBeAttached();
+  await expect(page.getByText("가게 앞 QR로 모은 주민들의 목소리로, 비어 있는 이 자리에 꼭 맞는 가게와 사장님을 찾아요.").first()).toBeAttached(); // sr-only copy + aria-hidden word spans
   await expect(page.getByText(/응답자 \d+명 중 \d+명이 이용 의향/).first()).toBeAttached();
   await expect(page.getByText("추정치이며 실제 매출을 보장하지 않아요.")).toBeAttached();
 });
