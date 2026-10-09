@@ -1,6 +1,6 @@
 {
   "name": "ssulmo",
-  "description": "썰모 — 공실 수요 조사와 창업 신청 시제품",
+  "description": "쓸모 — 공실 수요 조사와 창업 신청 시제품",
   "private": true,
   "type": "module",
   "scripts": {

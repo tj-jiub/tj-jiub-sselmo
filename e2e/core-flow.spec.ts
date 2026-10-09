@@ -35,6 +35,10 @@ test("application → admin sees it after login", async ({ page }) => {
   await page.getByLabel("이메일 (결과 링크를 받을 주소)").fill("e2e@example.com");
   await page.locator('input[name="consentPrivacy"]').check();
   await page.locator('input[name="consentIntroTerms"]').check();
+  await page.locator('input[name="consentAi"]').check();
+  // 쓸모 트랙 is the default; its consulting consent is required.
+  await page.locator('input[name="track"][value="ssulmo"]').check();
+  await page.locator('input[name="consentConsulting"]').check();
   await page.getByRole("button", { name: "무료로 신청하기" }).click();
   await expect(page.getByText("신청이 접수됐어요")).toBeVisible();
 
@@ -46,19 +50,14 @@ test("application → admin sees it after login", async ({ page }) => {
   await expect(page.getByText(`${name} · 젤라또 가게`)).toBeVisible();
 });
 
-test("result page → paid feedback request shows transfer details", async ({ page }) => {
+// Depends on the seed giving applicant 이예시 (token "b" x32) an AI report.
+test("result page shows the free AI report and no payment UI", async ({ page }) => {
   expect((await page.goto(`/result/${"0".repeat(32)}`))?.status()).toBe(404);
 
-  // Seeded 이예시 has a written result; reruns land directly on the transfer step.
   await page.goto(`/result/${"b".repeat(32)}`);
   await expect(page.getByText("보완하면 좋아요")).toBeVisible();
-  const consent = page.locator('input[name="consentFeeTerms"]');
-  if (await consent.count()) {
-    await consent.check();
-    await page.getByRole("button", { name: "피드백 신청하기" }).click();
-  }
-  await expect(page.getByText("입금 안내 · 사업계획서 검토 및 피드백 서비스")).toBeVisible();
-  await expect(page.getByText("10,000원")).toBeVisible();
+  await expect(page.getByText("오픈 베타 기간 무료")).toBeVisible();
+  await expect(page.getByText("입금")).toHaveCount(0);
 });
 
 test("founder matching: by item and by district", async ({ page }) => {

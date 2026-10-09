@@ -1,13 +1,6 @@
 // Fixed copy and policy values. Anything marked TODO(legal) must be reviewed
 // before real users see it.
 
-export const FEE_SERVICE_NAME = "사업계획서 검토 및 피드백 서비스";
-
-// Paid written feedback, requested from the result page. Applying is free.
-export const FEE_AMOUNT_KRW = 10000;
-// TODO(legal): placeholder account — confirm before launch.
-export const BANK_TRANSFER = { bank: "OO은행", account: "000-000000-00-000", holder: "썰모" };
-
 export const CONSENTS = {
   // TODO(legal): purpose, items, retention period and destruction policy need review.
   surveyContact: {
@@ -19,11 +12,15 @@ export const CONSENTS = {
     label: "개인정보 수집·이용 동의",
     detail: "수집 항목: 이름, 이메일, 사업계획 · 목적: 신청 검토 및 결과 안내 · 보유 기간: 검토 완료 후 1년",
   },
-  // Collected on the result page when paid feedback is requested.
-  // TODO(legal): confirm this wording fully covers the fee's nature.
-  feeTerms: {
-    label: `${FEE_SERVICE_NAME} 이용료예요`,
-    detail: "임대차 계약 체결과 관계없으며, 입점이나 계약을 보장하지 않아요.",
+  // TODO(legal): overseas transfer / processing-delegation wording (Anthropic, US) needs review.
+  ai: {
+    label: "AI 분석 처리위탁·국외이전 동의",
+    detail: "사업계획 내용을 AI(Anthropic, 미국)로 분석해요. 이름과 이메일은 보내지 않아요.",
+  },
+  // TODO(legal): consulting terms (fee structure, separation from the lease) need review.
+  consulting: {
+    label: "쓸모 트랙 컨설팅 약관 동의",
+    detail: "임대차 계약과 별개예요. 손해 본 달은 0원, 번 달만 매출의 1%. 일반 신청을 고르면 해당하지 않아요.",
   },
   // TODO(legal): confirm broker-introduction consent may be collected on this form.
   introTerms: {

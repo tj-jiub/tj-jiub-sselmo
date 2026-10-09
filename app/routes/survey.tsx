@@ -16,7 +16,7 @@ import { getDeviceId } from "~/lib/device.server";
 import { CONSENTS } from "~/lib/policy";
 import { btnGhost, Card, Choice, Consent, ErrorNote, Hl, Question, Shell, SubmitButton, TextInput, Title } from "~/components/ui";
 
-export const meta: Route.MetaFunction = ({ data }) => [{ title: data ? `${data.name} — 썰모 설문` : "썰모" }];
+export const meta: Route.MetaFunction = ({ data }) => [{ title: data ? `${data.name} — 쓸모 설문` : "쓸모" }];
 
 export async function loader({ request, params, context }: Route.LoaderArgs) {
   const space = await getPublicSpace(context.cloudflare.env.DB, params.slug);

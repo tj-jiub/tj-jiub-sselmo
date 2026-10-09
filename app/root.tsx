@@ -11,7 +11,7 @@ export const links: Route.LinksFunction = () => [
   },
 ];
 
-export const meta: Route.MetaFunction = () => [{ title: "썰모" }];
+export const meta: Route.MetaFunction = () => [{ title: "쓸모" }];
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (

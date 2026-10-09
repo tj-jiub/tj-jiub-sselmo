@@ -1,89 +1,102 @@
-import { data, Form } from "react-router";
 import type { Route } from "./+types/result";
-import { getResultByToken, requestFeedback } from "~/lib/applications.server";
+import { getResultByToken } from "~/lib/applications.server";
 import { verdictLabel } from "~/lib/verdicts";
-import { BANK_TRANSFER, CONSENTS, FEE_AMOUNT_KRW, FEE_SERVICE_NAME } from "~/lib/policy";
-import { Card, Consent, ErrorNote, Section, Shell, SubmitButton, Title } from "~/components/ui";
-import { CopyButton } from "~/components/CopyButton";
+import { SECTION_KEYS, SECTION_LABELS } from "~/lib/ai-report";
+import { Card, Shell, Title } from "~/components/ui";
 
-export const meta: Route.MetaFunction = () => [{ title: "검토 결과 — 썰모" }, { name: "robots", content: "noindex" }];
+export const meta: Route.MetaFunction = () => [{ title: "평가 결과 — 쓸모" }, { name: "robots", content: "noindex" }];
+
+const OPEN_SECTIONS = 2;
 
 export async function loader({ params, context }: Route.LoaderArgs) {
   const result = await getResultByToken(context.cloudflare.env.DB, params.token);
   if (!result) throw new Response("Not found", { status: 404 });
-  return { ...result, verdictLabel: verdictLabel(result.verdict) };
+  const { report, ...rest } = result;
+  // The score stays on the server: pick the fields the page shows instead of sending the whole report.
+  return {
+    ...rest,
+    verdictLabel: verdictLabel(result.verdict),
+    report: report
+      ? {
+          strengths: report.strengths,
+          risks: report.risks,
+          notes: report.notes ?? [],
+          sections: SECTION_KEYS.map((k) => ({ key: k, label: SECTION_LABELS[k], text: report.sections[k] })),
+        }
+      : null,
+  };
 }
 
-export async function action({ request, params, context }: Route.ActionArgs) {
-  const form = await request.formData();
-  const outcome = await requestFeedback(context.cloudflare.env.DB, params.token, form.get("consentFeeTerms") === "on");
-  if (outcome === "not-found") throw new Response("Not found", { status: 404 });
-  if (outcome === "no-consent") return data({ error: "이용료 안내에 동의해 주세요." }, { status: 400 });
-  if (outcome === "not-ready") return data({ error: "아직 검토 중이에요." }, { status: 400 });
-  return { error: null };
+function Bullets({ title, items }: { title: string; items: string[] }) {
+  if (items.length === 0) return null;
+  return (
+    <div>
+      <h3 className="text-sm font-bold">{title}</h3>
+      <ul className="mt-1.5 list-disc pl-5 text-[15px]">
+        {items.map((t) => (
+          <li key={t}>{t}</li>
+        ))}
+      </ul>
+    </div>
+  );
 }
 
-const won = (n: number) => `${n.toLocaleString("ko-KR")}원`;
-
-export default function Result({ loaderData, actionData }: Route.ComponentProps) {
+export default function Result({ loaderData }: Route.ComponentProps) {
   const r = loaderData;
 
-  if (!r.verdict) {
+  if (!r.ready) {
     return (
       <Shell>
-        <Title eyebrow={r.spaceName}>아직 검토 중이에요</Title>
-        <p className="text-muted">검토가 끝나면 이 링크에서 결과를 볼 수 있어요.</p>
+        <Title eyebrow={r.spaceName}>평가 중이에요</Title>
+        <p className="text-muted">AI가 사업계획을 살펴보고 있어요. 평가가 끝나면 이 링크에서 결과를 볼 수 있어요.</p>
+        <p className="mt-2 text-sm text-muted">잠시 뒤에 이 페이지를 다시 열어 주세요.</p>
       </Shell>
     );
   }
 
   return (
     <Shell>
-      <Title eyebrow={r.spaceName}>{r.contactName}님, 검토 결과가 나왔어요</Title>
+      <Title eyebrow={r.spaceName}>{r.contactName}님, 평가가 나왔어요</Title>
       <Card top className="mb-8">
         <p className="text-cap font-bold tracking-wide">{r.verdictLabel}</p>
         <p className="mt-1.5 whitespace-pre-wrap">{r.summary}</p>
       </Card>
 
-      {r.feedbackSent ? (
-        <p className="text-muted">서면 피드백을 이메일로 보냈어요. 메일함을 확인해 주세요.</p>
-      ) : r.feedbackRequested ? (
-        <Section title={`입금 안내 · ${FEE_SERVICE_NAME}`}>
-          <dl className="grid grid-cols-[5rem_1fr] gap-y-1.5">
-            <dt className="text-muted">금액</dt>
-            <dd className="font-semibold">{won(FEE_AMOUNT_KRW)}</dd>
-            <dt className="text-muted">입금 계좌</dt>
-            <dd>
-              {BANK_TRANSFER.bank} {BANK_TRANSFER.account}
-            </dd>
-            <dt className="text-muted">예금주</dt>
-            <dd>{BANK_TRANSFER.holder}</dd>
-          </dl>
-          <p className="mt-3 text-cap text-muted">
-            입금자명은 신청서의 이름({r.contactName})과 같게 해 주세요. 입금이 확인되면 이메일로 피드백 문서를 보내드려요.
-          </p>
-          <div className="mt-5">
-            <CopyButton text={BANK_TRANSFER.account} label="계좌번호 복사" />
+      {r.report && (
+        <>
+          <div className="mb-8 grid gap-5">
+            <Bullets title="강점" items={r.report.strengths} />
+            <Bullets title="위험" items={r.report.risks} />
           </div>
-        </Section>
-      ) : (
-        <Form method="post">
-          <Section title={`${FEE_SERVICE_NAME} 받기 (선택)`}>
-            <p className="text-h3 font-bold tabular-nums">{won(FEE_AMOUNT_KRW)}</p>
-            <p className="mt-2 text-muted">
-              동네 설문 결과를 바탕으로 사업계획서를 항목별로 짚은 피드백 문서를 이메일로 보내드려요.
-            </p>
-            <ul className="mb-4 mt-2 list-disc pl-5 text-cap text-muted">
-              <li>업종·가격·시간대가 동네 수요와 맞는지</li>
-              <li>사업계획서에서 보완할 부분</li>
-            </ul>
-            <Consent name="consentFeeTerms" required label={CONSENTS.feeTerms.label} detail={CONSENTS.feeTerms.detail} />
-          </Section>
-          <ErrorNote message={actionData?.error} />
-          <SubmitButton>피드백 신청하기</SubmitButton>
-          <p className="mt-3 text-center text-cap text-muted">신청하지 않아도 위 결과는 계속 볼 수 있어요.</p>
-        </Form>
+
+          <section className="mb-8">
+            <h2 className="mb-3 border-b border-ink pb-2 text-sm font-bold">
+              상세 리포트 <span className="text-cap font-normal text-muted">· 오픈 베타 기간 무료</span>
+            </h2>
+            <div className="grid gap-2.5">
+              {r.report.sections.map((s, i) => (
+                <details key={s.key} open={i < OPEN_SECTIONS} className="rounded-[12px] border border-line px-4 py-3.5">
+                  <summary className="cursor-pointer text-sm font-bold">{s.label}</summary>
+                  <p className="mt-1.5 whitespace-pre-wrap text-[15px] leading-[1.6]">{s.text}</p>
+                </details>
+              ))}
+            </div>
+            {r.report.notes.length > 0 && (
+              <ul className="mt-4 list-disc pl-5 text-cap text-muted">
+                {r.report.notes.map((n) => (
+                  <li key={n}>{n}</li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </>
       )}
+
+      {/* TODO(legal): 쓸모 트랙 status wording and terms reference need review. */}
+      {r.track === "ssulmo" && (
+        <p className="mb-4 text-sm text-muted">쓸모 트랙으로 지원하셨어요. 컨설팅 안내는 따로 연락드려요.</p>
+      )}
+      <p className="text-cap text-muted">AI가 작성한 평가예요. 참고용으로 활용해 주세요.</p>
     </Shell>
   );
 }

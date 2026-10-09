@@ -1,4 +1,4 @@
-# 썰모 (Ssulmo) prototype
+# 쓸모 (Ssulmo) prototype
 1. Local: `npm install && cp .dev.vars.example .dev.vars && npm run db:migrate && npm run db:seed && npm run dev` → http://localhost:5173 (admin: admin@ssulmo.local / ssulmo-dev)
 2. Env (`.dev.vars` locally, `wrangler secret put` in prod): `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH` (`node scripts/hash-password.ts <pw>`), `SESSION_SECRET`.
 3. Bindings (`wrangler.json`): D1 `DB` (database `ssulmo`), R2 `UPLOADS` (bucket `ssulmo-uploads`).

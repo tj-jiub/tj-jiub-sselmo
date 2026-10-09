@@ -6,13 +6,20 @@ export function Hl({ children }: { children: ReactNode }) {
   return <mark className="hl">{children}</mark>;
 }
 
+/** Plain wordmark; the one highlight per screen is reserved for the headline. */
+export function Wordmark() {
+  return (
+    <Link to="/" className="text-lg font-bold tracking-tight">
+      쓸모
+    </Link>
+  );
+}
+
 export function NavBar() {
   return (
     <header className="border-b border-line">
       <div className="mx-auto flex max-w-[1180px] items-center justify-between px-4 py-3.5 lg:px-12 lg:py-[18px]">
-        <Link to="/" className="text-lg font-bold tracking-tight">
-          썰모
-        </Link>
+        <Wordmark />
         <nav className="flex gap-5 text-sm text-muted lg:gap-7">
           <Link to="/find" className="hover:text-ink">
             공실 찾기
@@ -26,14 +33,25 @@ export function NavBar() {
   );
 }
 
+/** Wordmark only: for owners and other outside viewers who must not see the admin link. */
+function MinimalBar() {
+  return (
+    <header className="border-b border-line">
+      <div className="mx-auto flex max-w-[1180px] items-center px-4 py-3.5 lg:px-12 lg:py-[18px]">
+        <Wordmark />
+      </div>
+    </header>
+  );
+}
+
 /**
  * Page frame. Narrow (single column) by default; `wide` opens up to ~1180px on PC.
  * `nav={false}` is for screens that bring their own top bar (admin) or stay minimal (QR survey).
  */
-export function Shell({ children, wide = false, nav = true }: { children: ReactNode; wide?: boolean; nav?: boolean }) {
+export function Shell({ children, wide = false, nav = true }: { children: ReactNode; wide?: boolean; nav?: boolean | "minimal" }) {
   return (
     <>
-      {nav && <NavBar />}
+      {nav === "minimal" ? <MinimalBar /> : nav && <NavBar />}
       <main className={`mx-auto w-full px-4 py-8 lg:px-12 lg:py-14 ${wide ? "max-w-md lg:max-w-[1180px]" : "max-w-md lg:max-w-xl"}`}>
         {children}
       </main>

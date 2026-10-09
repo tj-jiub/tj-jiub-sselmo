@@ -4,7 +4,7 @@ import { listDistricts, parseFindParams, recommendByDistrict, recommendByType } 
 import { DistrictResults, DistrictStep, StartStep, TypeResults, TypeStep } from "~/components/matching";
 import { Shell } from "~/components/ui";
 
-export const meta: Route.MetaFunction = () => [{ title: "공실 찾기 — 썰모" }];
+export const meta: Route.MetaFunction = () => [{ title: "공실 찾기 — 쓸모" }];
 
 // The whole flow lives in the URL (?item=yes&type=… / ?item=no&district=…) so
 // every step is linkable and the loader stays a pure function of the query.
