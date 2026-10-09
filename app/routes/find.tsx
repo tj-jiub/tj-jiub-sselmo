@@ -2,7 +2,6 @@ import type { Route } from "./+types/find";
 import { loadPublicTallies } from "~/lib/matching.server";
 import { listDistricts, parseFindParams, recommendByDistrict, recommendByType } from "~/lib/matching";
 import { DistrictResults, DistrictStep, StartStep, TypeResults, TypeStep } from "~/components/matching";
-import { Shell } from "~/components/ui";
 
 export const meta: Route.MetaFunction = () => [{ title: "공실 찾기 — 쓸모" }];
 
@@ -32,12 +31,12 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
 export default function Find({ loaderData: d }: Route.ComponentProps) {
   return (
-    <Shell wide>
+    <>
       {d.step === "start" && <StartStep />}
       {d.step === "pick-type" && <TypeStep />}
       {d.step === "pick-district" && <DistrictStep districts={d.districts} />}
       {d.step === "type-results" && <TypeResults type={d.type} ranked={d.ranked} pending={d.pending} />}
       {d.step === "district-results" && <DistrictResults district={d.district} ranked={d.ranked} pending={d.pending} />}
-    </Shell>
+    </>
   );
 }
