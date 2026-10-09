@@ -53,8 +53,8 @@ export default function AdminSpaceNew({ actionData }: Route.ComponentProps) {
         />
         {/* TODO(legal): confirm what form of building-owner consent is sufficient (written form, scope, retention). */}
         <label className="mb-6 block">
-          <span className="mb-1.5 block text-sm font-medium">건물주 동의서 파일 (선택)</span>
-          <input type="file" name="consentFile" accept=".pdf,.png,.jpg,.jpeg,.hwp,.hwpx,.docx" className="text-sm" />
+          <span className="mb-1.5 block text-base font-medium">건물주 동의서 파일 (선택)</span>
+          <input type="file" name="consentFile" accept=".pdf,.png,.jpg,.jpeg,.hwp,.hwpx,.docx" className="text-base" />
         </label>
         <ErrorNote message={actionData?.error} />
         <SubmitButton>등록하기</SubmitButton>

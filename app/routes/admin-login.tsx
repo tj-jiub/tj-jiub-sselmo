@@ -18,7 +18,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 export default function AdminLogin({ actionData }: Route.ComponentProps) {
   return (
     <Shell>
-      <Title eyebrow="ADMIN">관리자 로그인</Title>
+      <Title eyebrow="관리자">관리자 로그인</Title>
       <Form method="post">
         <TextInput label="이메일" name="email" type="email" autoComplete="username" required />
         <TextInput label="비밀번호" name="password" type="password" autoComplete="current-password" required />

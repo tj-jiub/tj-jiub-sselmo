@@ -14,7 +14,7 @@ import {
 import { hashDeviceId, saveContact, saveResponse } from "~/lib/surveys.server";
 import { getDeviceId } from "~/lib/device.server";
 import { CONSENTS } from "~/lib/policy";
-import { btnGhost, Card, Choice, Consent, ErrorNote, Hl, Question, Shell, SubmitButton, TextInput, Title } from "~/components/ui";
+import { btnGhost, Choice, Consent, ErrorNote, Hl, Question, Shell, SubmitButton, TextInput, Title } from "~/components/ui";
 
 export const meta: Route.MetaFunction = ({ data }) => [{ title: data ? `${data.name} — 쓸모 설문` : "쓸모" }];
 
@@ -83,21 +83,21 @@ export default function Survey({ loaderData, actionData }: Route.ComponentProps)
       <Form method="post">
         <Question label="생기면 이용할 가게" hint="최대 3개" stack>
           {BUSINESS_CATEGORIES.map((c) => (
-            <Card key={c.name} className="!p-4">
-              <h3 className="text-cap font-bold tracking-[0.06em] text-muted">{c.name}</h3>
+            <div key={c.name} className="border-t border-line pt-3">
+              <h3 className="text-[15px] font-medium text-muted">{c.name}</h3>
               <div className="mt-2.5 flex flex-wrap gap-2">
                 {c.types.map((t) => (
                   <Choice key={t} type="checkbox" name="businessTypes" value={t} label={t} />
                 ))}
               </div>
-            </Card>
+            </div>
           ))}
-          <Card className="!p-4">
-            <h3 className="text-cap font-bold tracking-[0.06em] text-muted">그 밖에</h3>
+          <div className="border-t border-line pt-3">
+            <h3 className="text-[15px] font-medium text-muted">그 밖에</h3>
             <div className="mt-2.5 flex flex-wrap gap-2">
               <Choice type="checkbox" name="businessTypes" value={OTHER} label={OTHER} />
             </div>
-          </Card>
+          </div>
         </Question>
         <TextInput label="기타를 골랐다면 적어 주세요" name="businessTypeOther" maxLength={40} placeholder="예: 아이스크림집" />
         <Question label="얼마나 자주 갈 것 같나요?">{options(VISIT_FREQUENCY, "visitFrequency")}</Question>

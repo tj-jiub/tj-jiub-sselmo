@@ -73,7 +73,7 @@ export default function AdminSpace({ loaderData, actionData }: Route.ComponentPr
       <div className="grid gap-x-10 md:grid-cols-2">
         <div className="min-w-0">
           <Section title="위치 정보 (AI 평가에 쓰여요)">
-            <Form method="post" className="space-y-4 text-sm">
+            <Form method="post" className="space-y-4 text-base">
               <input type="hidden" name="intent" value="save-settings" />
               <label className="block">
                 <span className="mb-1.5 block font-medium">위치 특징</span>
@@ -92,14 +92,14 @@ export default function AdminSpace({ loaderData, actionData }: Route.ComponentPr
               <button className={btnSmall}>저장</button>
               {actionData?.saved === "settings" && <span className="ml-3 text-muted">저장했어요.</span>}
             </Form>
-            <div className="mt-6 rounded-[14px] border border-line p-4 text-sm">
-              <h3 className="mb-2 text-cap font-bold text-muted">예상 매출 미리보기 {demand.topType ? `· ${demand.topType.type}` : ""}</h3>
+            <div className="mt-6 rounded-[14px] border border-line p-4 text-base">
+              <h3 className="mb-2 text-[15px] font-bold text-muted">예상 매출 미리보기 {demand.topType ? `· ${demand.topType.type}` : ""}</h3>
               {est ? (
                 <>
                   <p>
                     월 매출 {formatManwonRange(est.revenue)} · 월 순이익 {formatManwonRange(est.netProfit)}
                   </p>
-                  <p className="mt-2 text-cap text-muted">
+                  <p className="mt-2 text-[15px] text-muted">
                     근거: 응답자 {demand.total}명 중 {est.respondents}명이 고른 업종, 1회 지출·방문 빈도 기준, 순이익률 {est.marginPct}%
                     {space.margin_pct === null ? ` (${demand.topType?.type} 기본값 ${defaultMargin(demand.topType?.type ?? "")}%)` : ""}, 환산 배수 {est.scaleFactor}. 추정치이며 실제 매출을 보장하지 않아요.
                   </p>
@@ -115,13 +115,13 @@ export default function AdminSpace({ loaderData, actionData }: Route.ComponentPr
             {ownerUrl ? (
               <>
                 <div className="flex items-center gap-2 rounded-[10px] bg-soft px-3 py-2.5">
-                  <span className="min-w-0 flex-1 truncate text-xs">{ownerUrl}</span>
+                  <span className="min-w-0 flex-1 truncate text-[15px]">{ownerUrl}</span>
                   <CopyButton text={ownerUrl} label="복사" />
                 </div>
-                <Form method="post" className="mt-3 flex flex-wrap items-center gap-3 text-sm">
+                <Form method="post" className="mt-3 flex flex-wrap items-center gap-3 text-base">
                   <input type="hidden" name="intent" value="regenerate-owner-token" />
                   <button className={btnSmallGhost}>새로 만들기</button>
-                  <span className="text-cap text-muted">새로 만들면 예전 링크는 바로 막혀요.</span>
+                  <span className="text-[15px] text-muted">새로 만들면 예전 링크는 바로 막혀요.</span>
                 </Form>
               </>
             ) : (
@@ -133,10 +133,10 @@ export default function AdminSpace({ loaderData, actionData }: Route.ComponentPr
           </Section>
           <Section title="현재 후보 (60점 이상 상위 5명)">
             {candidates.length === 0 ? (
-              <p className="rounded-[10px] border border-dashed border-line p-3 text-sm text-muted">아직 후보가 없어요.</p>
+              <p className="rounded-[10px] border border-dashed border-line p-3 text-base text-muted">아직 후보가 없어요.</p>
             ) : (
-              <table className="w-full text-left text-sm">
-                <thead className="text-cap text-muted">
+              <table className="w-full text-left text-base">
+                <thead className="text-[15px] text-muted">
                   <tr>
                     <th className="py-2 font-medium">순위</th>
                     <th className="py-2 font-medium">업종</th>
@@ -165,7 +165,7 @@ export default function AdminSpace({ loaderData, actionData }: Route.ComponentPr
       </div>
 
       <Section title="건물주 동의">
-        <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3 text-base">
           <p>
             {consented ? "동의 완료 — 링크가 공개돼 있어요." : "동의 전 — 설문·리포트·신청 링크가 모두 비공개예요."}
             {space.consent_file_key && (
@@ -189,7 +189,7 @@ export default function AdminSpace({ loaderData, actionData }: Route.ComponentPr
 
       <Section title="QR · 링크">
         <QrDownload url={surveyUrl} filename={`ssulmo-${space.slug}.png`} />
-        <ul className="mt-4 space-y-1 text-sm break-all">
+        <ul className="mt-4 space-y-1 text-base break-all">
           <li>설문: {surveyUrl}</li>
           <li>공개 요약: {origin}/r/{space.slug}</li>
           <li>창업 신청: {origin}/apply/{space.slug}</li>
@@ -199,11 +199,11 @@ export default function AdminSpace({ loaderData, actionData }: Route.ComponentPr
 
       <Section title={`수요 리포트 · 응답 ${report.total}건`}>
         {report.total < PUBLIC_THRESHOLD && (
-          <p className="mb-3 text-cap text-muted">
+          <p className="mb-3 text-[15px] text-muted">
             공개 요약은 응답 {PUBLIC_THRESHOLD}건부터 열려요. (현재 {report.total}건)
           </p>
         )}
-        <ul className="divide-y divide-line text-sm">
+        <ul className="divide-y divide-line text-base">
           {report.byType.map((s) => (
             <li key={s.type} className="flex justify-between gap-3 py-2.5">
               <span className="font-medium">{s.type}</span>
@@ -213,8 +213,8 @@ export default function AdminSpace({ loaderData, actionData }: Route.ComponentPr
         </ul>
         {report.others.length > 0 && (
           <div className="mt-6">
-            <h3 className="mb-2 text-cap font-bold text-muted">기타 응답 (원문)</h3>
-            <ul className="flex flex-wrap gap-2 text-sm">
+            <h3 className="mb-2 text-[15px] font-bold text-muted">기타 응답 (원문)</h3>
+            <ul className="flex flex-wrap gap-2 text-base">
               {report.others.map((o, i) => (
                 <li key={i} className="rounded-full border border-line px-3 py-1">
                   {o}
@@ -226,8 +226,8 @@ export default function AdminSpace({ loaderData, actionData }: Route.ComponentPr
         <div className="mt-8 grid gap-6 sm:grid-cols-2">
           {breakdowns.map((b) => (
             <div key={b.title}>
-              <h3 className="mb-2 text-cap font-bold text-muted">{b.title}</h3>
-              <ul className="text-sm">
+              <h3 className="mb-2 text-[15px] font-bold text-muted">{b.title}</h3>
+              <ul className="text-base">
                 {b.rows.map((r) => (
                   <li key={r.label} className="flex justify-between py-1">
                     <span>{r.label}</span>
@@ -241,7 +241,7 @@ export default function AdminSpace({ loaderData, actionData }: Route.ComponentPr
       </Section>
 
       <Section title={`소식 받기 연락처 ${contacts.length}건 (개인정보)`}>
-        <ul className="text-sm">
+        <ul className="text-base">
           {contacts.map((c, i) => (
             <li key={i} className="py-1">
               {c.contact}
@@ -250,7 +250,7 @@ export default function AdminSpace({ loaderData, actionData }: Route.ComponentPr
         </ul>
       </Section>
 
-      <Link to="/admin" className="text-sm text-muted underline">
+      <Link to="/admin" className="text-base text-muted underline">
         ← 목록으로
       </Link>
     </Shell>

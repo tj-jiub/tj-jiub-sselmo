@@ -8,7 +8,7 @@ import { FEE_RATE } from "~/lib/consulting";
 import { checkUpload, storeUpload } from "~/lib/uploads.server";
 import { CONSENTS } from "~/lib/policy";
 import { parseTypePrefill } from "~/lib/matching";
-import { btnGhost, Consent, ErrorNote, Shell, SubmitButton, TextArea, TextInput, Title } from "~/components/ui";
+import { btnGhost, Consent, ErrorNote, Section, Shell, SubmitButton, TextArea, TextInput, Title } from "~/components/ui";
 
 export const meta: Route.MetaFunction = ({ data }) => [{ title: data ? `${data.name} 창업 신청 — 쓸모` : "쓸모" }];
 
@@ -40,8 +40,8 @@ function TrackCard(props: { value: "ssulmo" | "general"; title: string; desc: st
     <label className="cursor-pointer">
       <input type="radio" name="track" value={props.value} checked={props.checked} onChange={props.onChange} className="peer sr-only" />
       <span className="block rounded-[14px] border border-line bg-paper p-4 transition-colors peer-checked:border-yellow-deep peer-checked:bg-yellow peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ink">
-        <b className="block text-lg">{props.title}</b>
-        <span className="mt-1 block text-[15px]">{props.desc}</span>
+        <b className="block text-lg font-bold">{props.title}</b>
+        <span className="mt-1 block text-base">{props.desc}</span>
       </span>
     </label>
   );
@@ -61,7 +61,7 @@ export default function Apply({ loaderData, actionData }: Route.ComponentProps) 
         <p className="text-muted">
           AI 평가를 시작했어요. 평가 결과 링크를 <b className="text-ink">{actionData.email}</b>으로 보내드려요.
         </p>
-        <p className="mt-2 text-sm text-muted">메일이 오지 않으면 스팸함도 확인해 주세요.</p>
+        <p className="mt-2 text-muted">메일이 오지 않으면 스팸함도 확인해 주세요.</p>
         <Link to={`/r/${loaderData.slug}`} className={`${btnGhost} mt-8 w-full`}>
           동네 의견 다시 보기
         </Link>
@@ -76,7 +76,7 @@ export default function Apply({ loaderData, actionData }: Route.ComponentProps) 
       </Title>
       <Form method="post" encType="multipart/form-data" className="group">
         <fieldset className="mb-8">
-          <legend className="font-bold">어떻게 지원할까요?</legend>
+          <legend className="text-base font-bold">어떻게 지원할까요?</legend>
           <div className="mt-3 grid gap-3">
             <TrackCard
               value="ssulmo"
@@ -89,17 +89,22 @@ export default function Apply({ loaderData, actionData }: Route.ComponentProps) 
           </div>
         </fieldset>
 
+        <Section title="아이템">
         <TextInput label="하고 싶은 업종" name="businessType" defaultValue={loaderData.prefillType} maxLength={40} placeholder="예: 젤라또 가게" required />
         <TextArea label="사업계획" name="planText" maxLength={5000} placeholder="누구에게, 무엇을, 어떻게 팔지 자유롭게 적어 주세요." required />
         <label className="mb-5 block">
-          <span className="mb-1.5 block text-sm font-medium">사업계획서 파일 (선택, 10MB 이하)</span>
-          <input type="file" name="planFile" accept=".pdf,.png,.jpg,.jpeg,.hwp,.hwpx,.docx" className="text-sm" />
+          <span className="mb-1.5 block text-base font-medium">사업계획서 파일 (선택, 10MB 이하)</span>
+          <input type="file" name="planFile" accept=".pdf,.png,.jpg,.jpeg,.hwp,.hwpx,.docx" className="text-base" />
         </label>
         <TextInput label="예상 창업 비용 (만원)" name="estCostManwon" inputMode="numeric" pattern="[0-9]*" placeholder="예: 4500" required />
+        </Section>
+        <Section title="나">
         <TextInput label="이름" name="contactName" maxLength={40} autoComplete="name" required />
         <TextInput label="이메일 (결과 링크를 받을 주소)" name="email" type="email" maxLength={100} autoComplete="email" placeholder="name@example.com" required />
+        </Section>
 
-        <div className="mb-8 mt-8">
+        <Section title="동의">
+        <div className="mb-2 border-b border-line">
           <Consent name="consentPrivacy" required label={CONSENTS.privacy.label} detail={CONSENTS.privacy.detail} />
           <Consent name="consentIntroTerms" required label={CONSENTS.introTerms.label} detail={CONSENTS.introTerms.detail} />
           <Consent name="consentAi" required label={CONSENTS.ai.label} detail={CONSENTS.ai.detail} />
@@ -111,6 +116,7 @@ export default function Apply({ loaderData, actionData }: Route.ComponentProps) 
           )}
           <Consent name="consentBrokerIntro" label={CONSENTS.brokerIntroOptIn.label} detail={CONSENTS.brokerIntroOptIn.detail} />
         </div>
+        </Section>
 
         <ErrorNote message={actionData?.error} />
         <SubmitButton>무료로 신청하기</SubmitButton>

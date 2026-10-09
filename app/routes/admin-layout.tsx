@@ -11,7 +11,7 @@ export default function AdminLayout() {
   return (
     <div>
       <nav className="border-b border-line">
-        <div className="mx-auto flex max-w-[1180px] items-center justify-between px-4 py-3.5 text-sm lg:px-12">
+        <div className="mx-auto flex max-w-[1180px] items-center justify-between px-4 py-3.5 text-base lg:px-12">
           <Link to="/admin" className="text-lg font-bold tracking-tight">
             쓸모 관리자
           </Link>

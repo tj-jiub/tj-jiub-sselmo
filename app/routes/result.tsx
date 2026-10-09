@@ -31,8 +31,8 @@ function Bullets({ title, items }: { title: string; items: string[] }) {
   if (items.length === 0) return null;
   return (
     <div>
-      <h3 className="text-sm font-bold">{title}</h3>
-      <ul className="mt-1.5 list-disc pl-5 text-[15px]">
+      <h3 className="text-base font-bold">{title}</h3>
+      <ul className="mt-1.5 list-disc pl-5 text-base">
         {items.map((t) => (
           <li key={t}>{t}</li>
         ))}
@@ -49,7 +49,7 @@ export default function Result({ loaderData }: Route.ComponentProps) {
       <Shell>
         <Title eyebrow={r.spaceName}>평가 중이에요</Title>
         <p className="text-muted">AI가 사업계획을 살펴보고 있어요. 평가가 끝나면 이 링크에서 결과를 볼 수 있어요.</p>
-        <p className="mt-2 text-sm text-muted">잠시 뒤에 이 페이지를 다시 열어 주세요.</p>
+        <p className="mt-2 text-muted">잠시 뒤에 이 페이지를 다시 열어 주세요.</p>
       </Shell>
     );
   }
@@ -58,7 +58,7 @@ export default function Result({ loaderData }: Route.ComponentProps) {
     <Shell>
       <Title eyebrow={r.spaceName}>{r.contactName}님, 평가가 나왔어요</Title>
       <Card top className="mb-8">
-        <p className="text-cap font-bold tracking-wide">{r.verdictLabel}</p>
+        <p className="text-[15px] font-bold">{r.verdictLabel}</p>
         <p className="mt-1.5 whitespace-pre-wrap">{r.summary}</p>
       </Card>
 
@@ -70,19 +70,19 @@ export default function Result({ loaderData }: Route.ComponentProps) {
           </div>
 
           <section className="mb-8">
-            <h2 className="mb-3 border-b border-ink pb-2 text-sm font-bold">
-              상세 리포트 <span className="text-cap font-normal text-muted">· 오픈 베타 기간 무료</span>
+            <h2 className="mb-3 border-b border-ink pb-2 text-base font-bold">
+              상세 리포트 <span className="text-[15px] font-normal text-muted">· 오픈 베타 기간 무료</span>
             </h2>
-            <div className="grid gap-2.5">
+            <div className="border-b border-line">
               {r.report.sections.map((s, i) => (
-                <details key={s.key} open={i < OPEN_SECTIONS} className="rounded-[12px] border border-line px-4 py-3.5">
-                  <summary className="cursor-pointer text-sm font-bold">{s.label}</summary>
-                  <p className="mt-1.5 whitespace-pre-wrap text-[15px] leading-[1.6]">{s.text}</p>
+                <details key={s.key} open={i < OPEN_SECTIONS} className="border-t border-line py-3.5">
+                  <summary className="cursor-pointer text-base font-bold">{s.label}</summary>
+                  <p className="mt-1.5 whitespace-pre-wrap text-base leading-[1.6]">{s.text}</p>
                 </details>
               ))}
             </div>
             {r.report.notes.length > 0 && (
-              <ul className="mt-4 list-disc pl-5 text-cap text-muted">
+              <ul className="mt-4 list-disc pl-5 text-[15px] text-muted">
                 {r.report.notes.map((n) => (
                   <li key={n}>{n}</li>
                 ))}
@@ -94,9 +94,9 @@ export default function Result({ loaderData }: Route.ComponentProps) {
 
       {/* TODO(legal): 쓸모 트랙 status wording and terms reference need review. */}
       {r.track === "ssulmo" && (
-        <p className="mb-4 text-sm text-muted">쓸모 트랙으로 지원하셨어요. 컨설팅 안내는 따로 연락드려요.</p>
+        <p className="mb-4 text-base text-muted">쓸모 트랙으로 지원하셨어요. 컨설팅 안내는 따로 연락드려요.</p>
       )}
-      <p className="text-cap text-muted">AI가 작성한 평가예요. 참고용으로 활용해 주세요.</p>
+      <p className="text-[15px] text-muted">AI가 작성한 평가예요. 참고용으로 활용해 주세요.</p>
     </Shell>
   );
 }

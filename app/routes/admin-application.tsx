@@ -99,7 +99,7 @@ export default function AdminApplication({ loaderData, actionData }: Route.Compo
       <div className="grid gap-x-10 md:grid-cols-2">
         <div className="min-w-0">
           <Section title="신청 내용 (개인정보)">
-            <dl className="grid grid-cols-[7rem_1fr] gap-y-2 text-sm">
+            <dl className="grid grid-cols-[7rem_1fr] gap-y-2 text-base">
               <dt className="text-muted">이메일</dt>
               <dd className="break-all">{app.email}</dd>
               <dt className="text-muted">예상 창업 비용</dt>
@@ -115,11 +115,11 @@ export default function AdminApplication({ loaderData, actionData }: Route.Compo
                 )}
               </dd>
             </dl>
-            <p className="mt-4 whitespace-pre-wrap rounded-[14px] border border-line p-4 text-sm">{app.plan_text}</p>
+            <p className="mt-4 whitespace-pre-wrap rounded-[14px] border border-line p-4 text-base">{app.plan_text}</p>
           </Section>
 
           <Section title="동의 기록">
-            <ul className="space-y-1 text-sm">
+            <ul className="space-y-1 text-base">
               <li>개인정보 수집·이용: {date(app.consent_privacy_at)}</li>
               <li>중개 소개 조건 안내: {date(app.consent_intro_terms_at)}</li>
               <li>중개사 소개 동의: {app.consent_broker_intro_at ? date(app.consent_broker_intro_at) : "동의 안 함"}</li>
@@ -130,7 +130,7 @@ export default function AdminApplication({ loaderData, actionData }: Route.Compo
 
           <Section title="중개사 소개 기록">
             {canIntroduce ? (
-              <Form method="post" className="mb-4 flex flex-wrap items-end gap-3 text-sm">
+              <Form method="post" className="mb-4 flex flex-wrap items-end gap-3 text-base">
                 <input type="hidden" name="intent" value="add-intro" />
                 <label>
                   <span className="mb-1 block">중개사 이름</span>
@@ -143,11 +143,11 @@ export default function AdminApplication({ loaderData, actionData }: Route.Compo
                 <button className={btnSmall}>기록</button>
               </Form>
             ) : (
-              <p className="mb-4 rounded-[10px] border border-dashed border-line p-3 text-sm text-muted">
+              <p className="mb-4 rounded-[10px] border border-dashed border-line p-3 text-base text-muted">
                 신청자가 중개사 소개에 동의하지 않아 기록할 수 없어요.
               </p>
             )}
-            <ul className="divide-y divide-line text-sm">
+            <ul className="divide-y divide-line text-base">
               {intros.map((i) => (
                 <li key={i.id} className="flex justify-between py-2">
                   <span>{i.broker_name}</span>
@@ -160,57 +160,57 @@ export default function AdminApplication({ loaderData, actionData }: Route.Compo
 
         <div className="min-w-0">
           <Section title="AI 평가">
-            <p className="mb-3 text-sm">
-              <span className={`rounded-full border border-line px-2.5 py-0.5 text-cap font-bold ${status.tone}`}>{status.label}</span>
+            <p className="mb-3 text-base">
+              <span className={`rounded-full border border-line px-2.5 py-0.5 text-[15px] font-bold ${status.tone}`}>{status.label}</span>
             </p>
             {app.ai_status === "done" && report && (
               <>
                 <p className="text-[15px]">
                   <b>{report.score}점</b> (참고용){verdict ? ` · ${verdict}` : ""}
                 </p>
-                <p className="mt-1.5 text-cap text-muted">
+                <p className="mt-1.5 text-[15px] text-muted">
                   강점: {report.strengths.join(", ")} · 위험: {report.risks.join(", ")}
                 </p>
-                <p className="mt-1.5 text-cap text-muted">
+                <p className="mt-1.5 text-[15px] text-muted">
                   {app.ai_model} · {app.ai_evaluated_at ? date(app.ai_evaluated_at) : ""}
                 </p>
-                <details className="mt-3 rounded-[14px] border border-line p-4 text-sm">
+                <details className="mt-3 rounded-[14px] border border-line p-4 text-base">
                   <summary className="cursor-pointer font-medium">리포트 전체 보기</summary>
                   <p className="mt-3">{report.summary}</p>
                   {SECTION_KEYS.map((k) => (
                     <div key={k} className="mt-3">
-                      <h3 className="text-cap font-bold text-muted">{SECTION_LABELS[k]}</h3>
+                      <h3 className="text-[15px] font-bold text-muted">{SECTION_LABELS[k]}</h3>
                       <p className="mt-1 whitespace-pre-wrap">{report.sections[k]}</p>
                     </div>
                   ))}
                   {report.notes?.map((n) => (
-                    <p key={n} className="mt-3 text-cap text-muted">
+                    <p key={n} className="mt-3 text-[15px] text-muted">
                       {n}
                     </p>
                   ))}
                 </details>
               </>
             )}
-            {app.ai_status === "failed" && <p className="text-sm text-muted">평가에 실패했어요: {app.ai_error ?? "원인 미상"}</p>}
-            {app.ai_status === "pending" && <p className="text-sm text-muted">평가를 기다리고 있어요. 오래 걸리면 재평가를 눌러 주세요.</p>}
+            {app.ai_status === "failed" && <p className="text-base text-muted">평가에 실패했어요: {app.ai_error ?? "원인 미상"}</p>}
+            {app.ai_status === "pending" && <p className="text-base text-muted">평가를 기다리고 있어요. 오래 걸리면 재평가를 눌러 주세요.</p>}
             <Form method="post" className="mt-3 flex items-center gap-3">
               <input type="hidden" name="intent" value="re-evaluate" />
               <button className={btnSmallGhost}>재평가</button>
-              {saved === "re-evaluate" && <span className="text-sm text-muted">다시 평가를 시작했어요.</span>}
+              {saved === "re-evaluate" && <span className="text-base text-muted">다시 평가를 시작했어요.</span>}
             </Form>
           </Section>
 
           <Section title="결과 전달">
             {autoMail && (
-              <p className="mb-3 text-sm">
+              <p className="mb-3 text-base">
                 {app.result_mailed_at ? `자동 메일 발송됨 · ${date(app.result_mailed_at)}` : "자동 메일 대기 중 (실패했다면 아래 링크를 직접 보내세요)"}
               </p>
             )}
             {(!autoMail || !app.result_mailed_at) && (
-              <Form method="post" className="space-y-3 text-sm">
+              <Form method="post" className="space-y-3 text-base">
                 <input type="hidden" name="intent" value="set-mailed" />
                 <div className="flex items-center gap-2 rounded-[10px] bg-soft px-3 py-2.5">
-                  <span className="min-w-0 flex-1 truncate text-xs">{resultUrl}</span>
+                  <span className="min-w-0 flex-1 truncate text-[15px]">{resultUrl}</span>
                   <CopyButton text={resultUrl} label="링크 복사" />
                 </div>
                 <label className="flex items-center gap-2">
@@ -227,8 +227,8 @@ export default function AdminApplication({ loaderData, actionData }: Route.Compo
             <>
               <Section title="쓸모 트랙 · 월별 기록">
                 {months.length > 0 && (
-                  <table className="mb-4 w-full text-left text-sm">
-                    <thead className="text-cap text-muted">
+                  <table className="mb-4 w-full text-left text-base">
+                    <thead className="text-[15px] text-muted">
                       <tr>
                         <th className="py-2 font-medium">월</th>
                         <th className="py-2 font-medium">매출</th>
@@ -248,7 +248,7 @@ export default function AdminApplication({ loaderData, actionData }: Route.Compo
                     </tbody>
                   </table>
                 )}
-                <Form method="post" className="flex flex-wrap items-end gap-3 text-sm">
+                <Form method="post" className="flex flex-wrap items-end gap-3 text-base">
                   <input type="hidden" name="intent" value="add-month" />
                   <label>
                     <span className="mb-1 block">월</span>
@@ -264,14 +264,14 @@ export default function AdminApplication({ loaderData, actionData }: Route.Compo
                   </label>
                   <button className={btnSmall}>기록 추가</button>
                 </Form>
-                {saved === "month" && <p className="mt-2 text-sm text-muted">기록했어요.</p>}
+                {saved === "month" && <p className="mt-2 text-base text-muted">기록했어요.</p>}
                 {/* TODO(legal): fee rate (FEE_RATE in consulting.ts), loss-month waiver and billing need lawyer review before any charge. */}
-                <p className="mt-3 text-cap text-muted">기록과 계산만 해요. 실제 청구·결제는 하지 않아요.</p>
+                <p className="mt-3 text-[15px] text-muted">기록과 계산만 해요. 실제 청구·결제는 하지 않아요.</p>
               </Section>
 
               <Section title="교육자 연결">
                 {educators.length > 0 && (
-                  <ul className="mb-4 divide-y divide-line text-sm">
+                  <ul className="mb-4 divide-y divide-line text-base">
                     {educators.map((e) => (
                       <li key={e.id} className="py-2">
                         {e.organization} · {e.educator_name} · {e.connected_on}
@@ -279,7 +279,7 @@ export default function AdminApplication({ loaderData, actionData }: Route.Compo
                     ))}
                   </ul>
                 )}
-                <Form method="post" className="flex flex-wrap items-end gap-3 text-sm">
+                <Form method="post" className="flex flex-wrap items-end gap-3 text-base">
                   <input type="hidden" name="intent" value="add-educator" />
                   <label>
                     <span className="mb-1 block">기관</span>
@@ -295,14 +295,14 @@ export default function AdminApplication({ loaderData, actionData }: Route.Compo
                   </label>
                   <button className={btnSmall}>연결 기록</button>
                 </Form>
-                {saved === "educator" && <p className="mt-2 text-sm text-muted">기록했어요.</p>}
+                {saved === "educator" && <p className="mt-2 text-base text-muted">기록했어요.</p>}
               </Section>
             </>
           )}
         </div>
       </div>
 
-      <Link to="/admin" className="text-sm text-muted underline">
+      <Link to="/admin" className="text-base text-muted underline">
         ← 목록으로
       </Link>
     </Shell>

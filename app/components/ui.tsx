@@ -20,7 +20,7 @@ export function NavBar() {
     <header className="border-b border-line">
       <div className="mx-auto flex max-w-[1180px] items-center justify-between px-4 py-3.5 lg:px-12 lg:py-[18px]">
         <Wordmark />
-        <nav className="flex gap-5 text-sm text-muted lg:gap-7">
+        <nav className="flex gap-5 text-[15px] text-muted lg:gap-7">
           <Link to="/find" className="hover:text-ink">
             공실 찾기
           </Link>
@@ -89,7 +89,7 @@ export function Title({
   const size = hero ? "text-[26px] lg:text-h1 lg:tracking-[-0.03em]" : "text-[26px] lg:text-h2 lg:tracking-[-0.02em]";
   return (
     <header className="mb-8 lg:mb-10">
-      {eyebrow && <p className="text-cap font-bold tracking-[0.12em] text-muted">{eyebrow}</p>}
+      {eyebrow && <p className="text-[15px] font-medium text-muted">{eyebrow}</p>}
       <h1 className={`mt-2 font-bold leading-[1.382] lg:leading-[1.2] ${size}`}>{children}</h1>
       {sub && <p className="mt-3 max-w-[34em] text-muted lg:text-[17px]">{sub}</p>}
     </header>
@@ -99,7 +99,7 @@ export function Title({
 export function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="mb-10">
-      <h2 className="mb-3 border-b border-ink pb-2 text-sm font-bold">{title}</h2>
+      <h2 className="mb-3 border-b border-ink pb-2 text-base font-bold">{title}</h2>
       {children}
     </section>
   );
@@ -119,8 +119,8 @@ export function Question({
 }) {
   return (
     <fieldset className="mb-8">
-      <legend className="font-bold">{label}</legend>
-      {hint && <p className="mt-1 text-cap text-muted">{hint}</p>}
+      <legend className="text-base font-bold">{label}</legend>
+      {hint && <p className="mt-1 text-[15px] text-muted">{hint}</p>}
       <div className={stack ? "mt-3 grid gap-3" : "mt-3 flex flex-wrap gap-2.5"}>{children}</div>
     </fieldset>
   );
@@ -130,7 +130,7 @@ export function Choice(props: { type: "radio" | "checkbox"; name: string; value:
   return (
     <label className="cursor-pointer">
       <input type={props.type} name={props.name} value={props.value} className="peer sr-only" />
-      <span className="flex min-h-12 items-center rounded-full border border-line bg-paper px-[18px] py-2 transition-colors peer-checked:border-yellow-deep peer-checked:bg-yellow peer-checked:font-medium peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ink">
+      <span className="flex min-h-12 items-center rounded-full border border-line bg-paper px-[18px] py-2 text-base transition-colors peer-checked:border-yellow-deep peer-checked:bg-yellow peer-checked:font-medium peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ink">
         {props.label}
       </span>
     </label>
@@ -143,7 +143,7 @@ const fieldClass =
 export function TextInput({ label, ...rest }: InputHTMLAttributes<HTMLInputElement> & { label: string }) {
   return (
     <label className="mb-5 block">
-      <span className="mb-1.5 block text-sm font-medium">{label}</span>
+      <span className="mb-1.5 block text-base font-medium">{label}</span>
       <input className={fieldClass} {...rest} />
     </label>
   );
@@ -152,7 +152,7 @@ export function TextInput({ label, ...rest }: InputHTMLAttributes<HTMLInputEleme
 export function TextArea({ label, ...rest }: TextareaHTMLAttributes<HTMLTextAreaElement> & { label: string }) {
   return (
     <label className="mb-5 block">
-      <span className="mb-1.5 block text-sm font-medium">{label}</span>
+      <span className="mb-1.5 block text-base font-medium">{label}</span>
       <textarea className={`${fieldClass} min-h-40`} {...rest} />
     </label>
   );
@@ -160,14 +160,14 @@ export function TextArea({ label, ...rest }: TextareaHTMLAttributes<HTMLTextArea
 
 export function Consent(props: { name: string; label: string; detail?: string; required?: boolean }) {
   return (
-    <label className="mb-3 flex cursor-pointer gap-3 rounded-[14px] border border-line p-4">
+    <label className="flex cursor-pointer gap-3 border-t border-line py-4">
       <input type="checkbox" name={props.name} required={props.required} className="mt-1 size-5 shrink-0 accent-ink" />
       <span>
-        <span className="text-sm font-medium">
+        <span className="text-base font-medium">
           {props.required ? "[필수] " : "[선택] "}
           {props.label}
         </span>
-        {props.detail && <span className="mt-1 block text-cap text-muted">{props.detail}</span>}
+        {props.detail && <span className="mt-1 block text-[15px] leading-relaxed text-muted">{props.detail}</span>}
       </span>
     </label>
   );
@@ -197,7 +197,7 @@ export function SubmitButton({ children }: { children: ReactNode }) {
 export function ErrorNote({ message }: { message?: string | null }) {
   if (!message) return null;
   return (
-    <p role="alert" className="mb-5 rounded-[10px] border border-ink bg-soft px-4 py-3 text-sm font-medium">
+    <p role="alert" className="mb-5 rounded-[10px] border border-ink bg-soft px-4 py-3 text-base font-medium">
       {message}
     </p>
   );

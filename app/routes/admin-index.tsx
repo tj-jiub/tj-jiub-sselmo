@@ -15,7 +15,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 export default function AdminIndex({ loaderData }: Route.ComponentProps) {
   return (
     <Shell wide nav={false}>
-      <Title eyebrow="ADMIN">대시보드</Title>
+      <Title eyebrow="관리자">대시보드</Title>
       <Section title="공간">
         <ul className="divide-y divide-line">
           {loaderData.spaces.map((s) => (
@@ -25,7 +25,7 @@ export default function AdminIndex({ loaderData }: Route.ComponentProps) {
                   <span className="font-medium">{s.name}</span>
                   <span className="ml-2 text-muted">{s.neighborhood}</span>
                 </span>
-                <span className="shrink-0 text-sm text-muted">
+                <span className="shrink-0 text-base text-muted">
                   응답 {s.response_count} · {s.owner_consent ? "공개" : "비공개"}
                 </span>
               </Link>
@@ -38,8 +38,8 @@ export default function AdminIndex({ loaderData }: Route.ComponentProps) {
       </Section>
       <Section title="창업 신청">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[44rem] text-left text-sm">
-            <thead className="text-cap text-muted">
+          <table className="w-full min-w-[44rem] text-left text-base">
+            <thead className="text-[15px] text-muted">
               <tr>
                 <th className="py-2 font-medium">신청자 · 업종</th>
                 <th className="py-2 font-medium">공간</th>
