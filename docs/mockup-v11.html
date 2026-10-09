@@ -1,0 +1,274 @@
+<title>쓸모 모집 페이지 시안</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Geist+Mono:wght@500&display=swap">
+<style>
+/* Layout: one continuous page in the tbd-studio pattern — full-height hero that dissolves into the next block, a sticky heading beside a scrolling list (focus row lit, others dim), stacked sticky cards, a compact stats band. Light-only by design (mirrors the product). */
+:root {
+  --ink: #1d1d1b;
+  --paper: #ffffff;
+  --soft: #fafaf7;
+  --muted: #5f5d58;
+  --line: #e8e6e1;
+  --yellow: #fff0a6;
+  --yellow-deep: #f2d65c;
+  --green: #d3f0bf;
+  --green-deep: #8fcb6e;
+  --hl: rgba(255, 221, 87, 0.45);
+  --sans: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --mono: "Geist Mono", ui-monospace, Menlo, monospace;
+  --enter: 900ms;
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: auto; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); word-break: keep-all; overflow-wrap: break-word; }
+::selection { background: var(--hl); color: var(--ink); }
+
+.wrap { width: min(1180px, 100% - 32px); margin-inline: auto; }
+.label { font-size: 15px; font-weight: 500; color: var(--muted); }
+.label .n { font-family: var(--mono); font-size: 13px; margin-right: 8px; color: var(--ink); }
+h1, h2, h3 { font-weight: 700; letter-spacing: -.02em; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(36px, 6.6vw, 67.8px); line-height: 1.146; }
+h2 { font-size: clamp(28px, 4.2vw, 41.9px); line-height: 1.236; }
+p { font-size: 18px; line-height: 1.618; color: var(--muted); margin: 0; text-wrap: pretty; }
+mark { background: var(--hl); color: inherit; padding: 0; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+
+/* nav */
+.nav { position: fixed; inset: 0 0 auto 0; z-index: 10; padding-top: env(safe-area-inset-top, 0px); }
+.nav .wrap { display: flex; justify-content: space-between; align-items: center; height: 64px; }
+.logo { font-weight: 700; font-size: 18px; }
+.logo i { font-style: normal; background: var(--hl); }
+.nav nav { display: flex; gap: 26px; font-size: 14px; color: var(--muted); }
+
+/* reveal: slow, staggered, triggered once when a block enters */
+.rv { opacity: 0; transform: translateY(22px); transition: opacity var(--enter) var(--ease), transform var(--enter) var(--ease); }
+.rv.seen { opacity: 1; transform: none; }
+.rv.d1 { transition-delay: 160ms; } .rv.d2 { transition-delay: 320ms; } .rv.d3 { transition-delay: 480ms; }
+
+/* 1 · hero: full height, bottom edge dissolves into the next block (mask-image) */
+.hero { height: 100vh; height: 100dvh; display: flex; align-items: center; background: var(--soft);
+  -webkit-mask-image: linear-gradient(#000 62%, transparent 100%); mask-image: linear-gradient(#000 62%, transparent 100%); }
+.hero .lead { margin-top: 22px; max-width: 30em; font-size: 18px; }
+.hero .meta { display: flex; gap: 28px; margin-top: 40px; font-size: 15px; font-weight: 500; color: var(--muted); }
+
+/* 2 · sticky heading beside a scrolling list; the row in the middle of the screen is lit */
+.demand { padding-block: 40px 140px; }
+.demand .wrap { display: grid; grid-template-columns: 1fr 1.618fr; gap: 64px; align-items: start; }
+.demand .side { position: sticky; top: 140px; }
+.demand .side p { margin-top: 16px; }
+.rows { display: grid; }
+.row { padding-block: 34px; border-top: 1px solid var(--line); transition: opacity 700ms var(--ease); opacity: .32; }
+.row:last-child { border-bottom: 1px solid var(--line); }
+.row.focus { opacity: 1; }
+.row .top { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; }
+.row .rank { font-family: var(--mono); font-size: 14px; color: var(--muted); }
+.row h3 { font-size: clamp(22px, 2.6vw, 25.9px); margin-top: 6px; }
+.row .phrase { margin-top: 8px; font-size: 18px; color: var(--ink); font-weight: 500; }
+.bar { height: 6px; background: var(--line); border-radius: 3px; margin-top: 14px; overflow: hidden; max-width: 420px; }
+.bar i { display: block; height: 100%; width: 0; background: var(--green-deep); transition: width 1600ms var(--ease); }
+.row.focus .bar i { width: var(--w); }
+
+/* 3 · stacked cards: each sticks a little lower, the ones behind fade at the bottom */
+.stack { padding-block: 40px 120px; background: var(--soft); }
+.stack .head { max-width: 640px; margin-bottom: 48px; }
+.stack .head p { margin-top: 14px; }
+.cards { position: relative; }
+.card { position: sticky; background: var(--paper); border: 1px solid var(--line); border-radius: 18px; padding: 48px 52px;
+  display: grid; grid-template-columns: 1fr 1.618fr; gap: 56px; align-items: start; margin-bottom: 28px; }
+.card:nth-child(1) { top: 110px; } .card:nth-child(2) { top: 130px; } .card:nth-child(3) { top: 150px; }
+.card .num { font-size: 15px; font-weight: 500; color: var(--muted); }
+.card h3 { font-size: clamp(28px, 3.4vw, 41.9px); line-height: 1.236; margin-top: 12px; }
+.card .big { font-size: clamp(30px, 4.4vw, 41.9px); font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.card .basis { margin-top: 16px; font-size: 16px; color: var(--muted); line-height: 1.618; }
+.card .warn { margin-top: 6px; font-size: 16px; color: var(--ink); font-weight: 500; }
+.card ul { list-style: none; margin: 0; padding: 0; }
+.card li { display: flex; gap: 18px; align-items: baseline; padding-block: 18px; border-top: 1px solid var(--line); font-size: clamp(19px, 1.8vw, 22px); font-weight: 500; line-height: 1.45; color: var(--ink); }
+.card li:last-child { border-bottom: 1px solid var(--line); }
+.card li .n { font-family: var(--mono); font-size: 14px; color: var(--muted); min-width: 1.6em; }
+.card.top { border-color: var(--green-deep); }
+.card.dim { -webkit-mask-image: linear-gradient(0deg, rgba(0,0,0,.25) 0%, #000 50%); mask-image: linear-gradient(0deg, rgba(0,0,0,.25) 0%, #000 50%); }
+
+/* scroll-typed statement: words fill from light gray to ink as the block scrolls past (neozen pattern) */
+.say { padding-block: 120px 140px; }
+.say .label { text-align: center; }
+.say .text { margin: 28px auto 0; max-width: 18em; text-align: center; font-size: clamp(32px, 5vw, 67.8px); font-weight: 700; line-height: 1.236; letter-spacing: -.03em; }
+.say .w { color: #cfcdc8; transition: color 260ms linear; }
+.say .w.lit { color: var(--ink); }
+
+/* 4 · compact stats band */
+.stats { padding-block: 96px; }
+.stats .wrap { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line); }
+.stats div > div { padding: 28px 24px 0 0; }
+.stats b { display: block; font-size: clamp(28px, 3.6vw, 41.9px); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.stats span { font-size: 15px; color: var(--muted); }
+
+/* 5 · CTA */
+.cta { padding-block: 120px 160px; text-align: center; }
+.cta p { margin-top: 14px; }
+.btn { display: inline-flex; align-items: center; gap: 8px; margin-top: 30px; border: 1px solid var(--yellow-deep); background: var(--yellow); color: var(--ink); font: inherit; font-weight: 700; font-size: 17px; padding: 15px 28px; border-radius: 12px; text-decoration: none; }
+.btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+
+/* review notes (not part of the product) */
+.review { border-top: 1px dashed var(--line); padding-block: 56px 96px; background: var(--soft); }
+.review ol { margin: 16px 0 0; padding-left: 20px; display: grid; gap: 10px; font-size: 15px; line-height: 1.6; max-width: 70ch; }
+.review b { font-weight: 700; }
+
+@media (max-width: 760px) {
+  .nav nav { display: none; }
+  .demand .wrap, .card, .stats .wrap { grid-template-columns: 1fr; }
+  .demand .side { position: static; }
+  .card { padding: 24px; min-height: 0; gap: 14px; }
+  .card:nth-child(1), .card:nth-child(2), .card:nth-child(3) { top: 76px; }
+  .stats .wrap { gap: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root { --enter: 0ms; }
+  .row, .bar i { transition: none; }
+}
+</style>
+
+<header class="nav"><div class="wrap"><span class="logo">쓸<i>모</i></span><nav><span>공실 찾기</span><span>동네 의견</span><span>관리자</span></nav></div></header>
+
+<main>
+  <!-- 1 -->
+  <section class="hero"><div class="wrap">
+    <div class="label rv">성동구 성수동 · 창업자 모집</div>
+    <h1 class="rv d1" style="margin-top:16px">주민 100명이<br><mark>아이스크림 가게</mark>를 원해요</h1>
+    <p class="lead rv d2">성수동 골목 1층 공실이에요. 가게 앞 QR로 모은 주민 120명의 의견을 바탕으로 이 자리에 맞는 창업자를 찾고 있어요.</p>
+    <div class="meta rv d3"><span>응답 120명</span><span>모집 중</span><span>신청 무료</span></div>
+  </div></section>
+
+  <!-- statement -->
+  <section class="say"><div class="wrap">
+    <div class="label">쓸모가 하는 일</div>
+    <p class="text" id="say">가게 앞 QR로 모은 주민들의 목소리로, 비어 있는 이 자리에 꼭 맞는 가게와 사장님을 찾아요.</p>
+  </div></section>
+
+  <!-- 2 -->
+  <section class="demand"><div class="wrap">
+    <div class="side">
+      <div class="label rv"><span class="n">01</span>동네 수요</div>
+      <h2 class="rv d1" style="margin-top:12px">이 자리가 원하는 가게</h2>
+      <p class="rv d2">주민이 실제로 고른 업종 순서예요.</p>
+    </div>
+    <div class="rows">
+      <div class="row" style="--w:83%"><div class="top"><span class="rank">01</span></div><h3>아이스크림·디저트</h3><div class="phrase">응답자 120명 중 100명이 이용 의향</div><div class="bar"><i></i></div></div>
+      <div class="row" style="--w:45%"><div class="top"><span class="rank">02</span></div><h3>카페</h3><div class="phrase">응답자 120명 중 54명이 이용 의향</div><div class="bar"><i></i></div></div>
+      <div class="row" style="--w:34%"><div class="top"><span class="rank">03</span></div><h3>베이커리</h3><div class="phrase">응답자 120명 중 41명이 이용 의향</div><div class="bar"><i></i></div></div>
+    </div>
+  </div></section>
+
+  <!-- 3 -->
+  <section class="stack"><div class="wrap">
+    <div class="head">
+      <div class="label rv"><span class="n">02</span>이 자리에서 시작하면</div>
+      <h2 class="rv d1" style="margin-top:12px">숫자로 먼저 확인하고, 함께 시작해요</h2>
+    </div>
+    <div class="cards">
+      <article class="card top">
+        <div><div class="num">A · 예상 매출</div><h3>아이스크림 가게라면</h3></div>
+        <div>
+          <div class="label">예상 월매출</div><div class="big">1,100만~2,000만원</div>
+          <div class="label" style="margin-top:16px">예상 월 순수익</div><div class="big">200만~360만원</div>
+          <div class="basis">아이스크림을 고른 주민 100명의 1회 지출과 방문 빈도, 순이익률 18% 가정</div>
+          <div class="warn">추정치이며 실제 매출을 보장하지 않아요.</div>
+        </div>
+      </article>
+      <article class="card">
+        <div><div class="num">B · 쓸모 트랙</div><h3>손해 본 달은 0원,<br>번 달만 매출의 1%</h3></div>
+        <div><ul><li><span class="n">01</span>AI 사업성 평가 리포트 무료</li><li><span class="n">02</span>건물주 후보로 추천</li><li><span class="n">03</span>“주민이 선택한 가게” 인증</li><li><span class="n">04</span>창업 컨설팅과 주민 오픈 알림</li></ul></div>
+      </article>
+      <article class="card">
+        <div><div class="num">C · 진행 순서</div><h3>신청부터 계약까지</h3></div>
+        <div><ul><li><span class="n">01</span>무료로 신청하면 AI 평가 결과를 메일로 받아요</li><li><span class="n">02</span>상위 후보 5명을 건물주에게 소개해요</li><li><span class="n">03</span>계약은 건물주와 공인중개사가 직접 해요</li></ul></div>
+      </article>
+    </div>
+  </div></section>
+
+  <!-- 4 -->
+  <section class="stats"><div class="wrap">
+    <div><div><b>120명</b><span>참여한 주민</span></div></div>
+    <div><div><b>30초</b><span>QR 설문에 걸린 시간</span></div></div>
+    <div><div><b>0원</b><span>신청 비용</span></div></div>
+  </div></section>
+
+  <!-- 5 -->
+  <section class="cta"><div class="wrap">
+    <div class="label rv"><span class="n">03</span>지원</div>
+    <h2 class="rv d1" style="margin-top:12px">이 자리의 주인공을 찾고 있어요</h2>
+    <p class="rv d2">신청은 무료예요. 결과는 메일로 보내드려요.</p>
+    <a class="btn rv d3" href="#review">무료로 지원하기 →</a>
+  </div></section>
+
+  <section class="review" id="review"><div class="wrap">
+    <div class="label">시안 v11 · 확인해 주세요</div>
+    <h2 style="margin-top:12px;font-size:25.9px">v10에서 바뀐 점</h2>
+    <ol>
+      <li><b>스크롤 타이핑:</b> 첫 화면 아래 “쓸모가 하는 일” 문장이 스크롤에 맞춰 연한 회색에서 진한 글자로 한 어절씩 채워져요(neozen 방식).</li>
+      <li><b>작은 글씨 해결:</b> 가장 작은 글씨를 15px로 올리고, 회색 글씨를 더 진하게 바꿨어요. 카드 목록은 16px → 19~22px 굵은 줄 목록으로 바꿨어요.</li>
+      <li><b>빈 공간 해결:</b> 카드가 내용 높이에 맞게 줄어들어서, 오른쪽만 비어 보이던 문제가 없어졌어요. 카드 제목은 26px → 최대 42px이에요.</li>
+      <li><b>라벨 글꼴:</b> “B · 쓸모 트랙” 같은 한글 라벨이 영문 고정폭 글꼴로 어색하게 벌어지던 걸 Noto Sans KR로 바꾸고, 번호(01·02)만 고정폭으로 남겼어요.</li>
+    </ol>
+  </div></section>
+</main>
+
+<script>
+(() => {
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Reveal blocks once, slowly.
+  const ro = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("seen"); ro.unobserve(e.target); } }), { threshold: 0.2 });
+  document.querySelectorAll(".rv").forEach((el) => (reduce ? el.classList.add("seen") : ro.observe(el)));
+
+  // Scroll-typed statement: split into words; light them in order as the block crosses the screen.
+  const say = document.getElementById("say");
+  say.innerHTML = say.textContent.trim().split(/\s+/).map((w) => `<span class="w">${w}</span>`).join(" ");
+  const words = [...say.querySelectorAll(".w")];
+  function typeOnScroll() {
+    const r = say.getBoundingClientRect();
+    const start = innerHeight * 0.85, end = innerHeight * 0.35;
+    const t = Math.max(0, Math.min(1, (start - r.top) / (start - end + r.height * 0.6)));
+    const lit = reduce ? words.length : Math.round(t * words.length);
+    words.forEach((w, i) => w.classList.toggle("lit", i < lit));
+  }
+  addEventListener("scroll", typeOnScroll, { passive: true });
+  typeOnScroll();
+
+  // Light the list row nearest the middle of the screen.
+  const rows = [...document.querySelectorAll(".row")];
+  // Fade the bottom of cards that have another card stacked on top of them.
+  const cards = [...document.querySelectorAll(".card")];
+  function onScroll() {
+    const mid = innerHeight / 2;
+    let best = null, bestD = Infinity;
+    rows.forEach((r) => { const b = r.getBoundingClientRect(); const d = Math.abs(b.top + b.height / 2 - mid); if (d < bestD) { bestD = d; best = r; } });
+    rows.forEach((r) => r.classList.toggle("focus", r === best && bestD < innerHeight * 0.45));
+    cards.forEach((c, i) => {
+      const next = cards[i + 1];
+      c.classList.toggle("dim", !!next && next.getBoundingClientRect().top - c.getBoundingClientRect().top < 120);
+    });
+  }
+  addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+
+  // Calm wheel: ease toward the target instead of jumping (touch and keyboard stay native).
+  if (reduce) return;
+  let target = scrollY, current = scrollY, raf = 0;
+  const max = () => document.documentElement.scrollHeight - innerHeight;
+  addEventListener("wheel", (e) => {
+    if (e.ctrlKey) return;
+    e.preventDefault();
+    target = Math.max(0, Math.min(max(), target + e.deltaY * 0.7));
+    if (!raf) raf = requestAnimationFrame(tick);
+  }, { passive: false });
+  function tick() {
+    current += (target - current) * 0.075;
+    if (Math.abs(target - current) < 0.5) current = target;
+    scrollTo(0, current);
+    raf = current === target ? 0 : requestAnimationFrame(tick);
+  }
+  addEventListener("scroll", () => { if (!raf) { target = current = scrollY; } }, { passive: true });
+})();
+</script>
