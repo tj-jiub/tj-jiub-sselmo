@@ -9,11 +9,7 @@ import {
   listApplications,
   listBrokerIntros,
   parseApplication,
-  parseFeedbackForm,
-  parseResultForm,
-  requestFeedback,
-  saveFeedback,
-  saveResult,
+  setResultMailed,
 } from "~/lib/applications.server";
 
 const valid = {
@@ -22,8 +18,10 @@ const valid = {
   estCostManwon: "4500",
   contactName: "김창업",
   email: "kim@example.com",
+  track: "general",
   consentPrivacy: "on",
   consentIntroTerms: "on",
+  consentAi: "on",
 };
 
 export function form(overrides: Record<string, string | null> = {}) {
@@ -41,9 +39,6 @@ export async function seeded(opts: { consentBrokerIntro?: boolean } = {}) {
   return { db, id, token };
 }
 
-const setResult = (db: D1Database, id: number) =>
-  db.prepare("UPDATE applications SET result_verdict = 'improve', result_summary = '객단가를 다시 보세요.' WHERE id = ?").bind(id).run();
-
 describe("parseApplication", () => {
   it("parses a free application; broker intro is opt-in", () => {
     expect(parseApplication(form())).toEqual({
@@ -55,15 +50,36 @@ describe("parseApplication", () => {
         contactName: "김창업",
         email: "kim@example.com",
         consentBrokerIntro: false,
+        track: "general",
+        consentConsulting: false,
       },
     });
     const opted = parseApplication(form({ consentBrokerIntro: "on" }));
     expect(opted.ok && opted.value.consentBrokerIntro).toBe(true);
   });
 
-  it("requires each of the two consents separately", () => {
-    expect(parseApplication(form({ consentPrivacy: null })).ok).toBe(false);
-    expect(parseApplication(form({ consentIntroTerms: null })).ok).toBe(false);
+  it("requires each of the three consents separately, on both tracks", () => {
+    for (const track of ["general", "ssulmo"]) {
+      const base = { track, consentConsulting: "on" };
+      expect(parseApplication(form(base)).ok).toBe(true);
+      expect(parseApplication(form({ ...base, consentPrivacy: null })).ok).toBe(false);
+      expect(parseApplication(form({ ...base, consentIntroTerms: null })).ok).toBe(false);
+      expect(parseApplication(form({ ...base, consentAi: null })).ok).toBe(false);
+    }
+  });
+
+  it("requires the consulting consent only on the 쓸모 track", () => {
+    expect(parseApplication(form({ track: "ssulmo" })).ok).toBe(false);
+    const ok = parseApplication(form({ track: "ssulmo", consentConsulting: "on" }));
+    expect(ok.ok && ok.value).toMatchObject({ track: "ssulmo", consentConsulting: true });
+    // A stray consulting checkbox on the general track is ignored, not recorded.
+    const general = parseApplication(form({ track: "general", consentConsulting: "on" }));
+    expect(general.ok && general.value).toMatchObject({ track: "general", consentConsulting: false });
+  });
+
+  it("requires a known track", () => {
+    expect(parseApplication(form({ track: null })).ok).toBe(false);
+    expect(parseApplication(form({ track: "vip" })).ok).toBe(false);
   });
 
   it("rejects missing or malformed fields", () => {
@@ -88,72 +104,60 @@ describe("application records", () => {
       consent_intro_terms_at: 123,
       consent_broker_intro: 1,
       consent_broker_intro_at: 123,
+      consent_ai_at: 123,
+      consent_consulting_at: null,
+      track: "general",
+      ai_status: "pending",
       consent_fee_terms_at: null,
       feedback_requested_at: null,
       payment_confirmed: 0,
     });
   });
 
+  it("stores the consulting consent time for the 쓸모 track", async () => {
+    const db = createTestDb();
+    const spaceId = await createSpace(db, { name: "A", district: "마포구", neighborhood: "n", slug: "a-space", ownerConsent: true, consentFileKey: null });
+    const r = parseApplication(form({ track: "ssulmo", consentConsulting: "on" }));
+    if (!r.ok) throw new Error(r.error);
+    const { id } = await createApplication(db, spaceId, r.value, null, 777);
+    expect(await getApplication(db, id)).toMatchObject({ track: "ssulmo", consent_consulting_at: 777, consent_ai_at: 777 });
+  });
+
+  it("marks the result as mailed", async () => {
+    const { db, id } = await seeded();
+    await setResultMailed(db, id, true, 999);
+    expect(await getApplication(db, id)).toMatchObject({ result_mailed_at: 999 });
+    await setResultMailed(db, id, false);
+    expect(await getApplication(db, id)).toMatchObject({ result_mailed_at: null });
+  });
+
+  it("result view: pending until evaluated, then verdict, summary and report without the score", async () => {
+    const { db, id, token } = await seeded();
+    expect(await getResultByToken(db, token)).toMatchObject({ ready: false, track: "general", report: null });
+    const report = {
+      score: 82, verdict: "fit", summary: "요약", strengths: ["a"], risks: ["b"],
+      sections: { demand_fit: "1", pricing: "2", hours: "3", cost_risk: "4", suggestions: "5" },
+    };
+    await db
+      .prepare("UPDATE applications SET ai_status='done', ai_score=82, ai_report=?, result_verdict='fit', result_summary='요약' WHERE id = ?")
+      .bind(JSON.stringify(report), id)
+      .run();
+    const view = await getResultByToken(db, token);
+    expect(view).toMatchObject({ ready: true, verdict: "fit", summary: "요약", report });
+    expect(JSON.stringify(view)).not.toContain("ai_score");
+    expect(view).not.toHaveProperty("score");
+  });
+
+  it("a failed evaluation still looks like 'in progress' to the applicant", async () => {
+    const { db, id, token } = await seeded();
+    await db.prepare("UPDATE applications SET ai_status='failed', ai_error='boom' WHERE id = ?").bind(id).run();
+    expect(await getResultByToken(db, token)).toMatchObject({ ready: false });
+  });
+
   it("shows nothing for an unknown token and a pending state before review", async () => {
     const { db, token } = await seeded();
     expect(await getResultByToken(db, "0".repeat(32))).toBeNull();
-    expect(await getResultByToken(db, token)).toMatchObject({ contactName: "김창업", spaceName: "A", verdict: null, feedbackRequested: false });
-  });
-});
-
-describe("requestFeedback", () => {
-  it("needs a written result and the fee-terms consent, and is idempotent", async () => {
-    const { db, id, token } = await seeded();
-    expect(await requestFeedback(db, "nope", true)).toBe("not-found");
-    expect(await requestFeedback(db, token, true)).toBe("not-ready");
-    await setResult(db, id);
-    expect(await requestFeedback(db, token, false)).toBe("no-consent");
-    expect(await requestFeedback(db, token, true, 500)).toBe("requested");
-    expect(await requestFeedback(db, token, true, 600)).toBe("already");
-    const row = await db.prepare("SELECT feedback_requested_at, consent_fee_terms_at FROM applications WHERE id = ?").bind(id).first();
-    expect(row).toEqual({ feedback_requested_at: 500, consent_fee_terms_at: 500 });
-    expect(await getResultByToken(db, token)).toMatchObject({ verdict: "improve", feedbackRequested: true, feedbackSent: false });
-  });
-});
-
-
-const fd = (entries: Record<string, string>) => {
-  const f = new FormData();
-  for (const [k, v] of Object.entries(entries)) f.set(k, v);
-  return f;
-};
-
-describe("admin result", () => {
-  it("parses and saves verdict, summary, score and the sent flag", async () => {
-    const { db, id } = await seeded();
-    const r = parseResultForm(fd({ verdict: "improve", summary: " 객단가를 다시 보세요. ", referenceScore: "72", resultSent: "on" }));
-    expect(r).toEqual({ ok: true, value: { verdict: "improve", summary: "객단가를 다시 보세요.", referenceScore: 72, resultSent: true } });
-    if (!r.ok) return;
-    await saveResult(db, id, r.value);
-    expect(await getApplication(db, id)).toMatchObject({ result_verdict: "improve", result_sent: 1, reference_score: 72 });
-    expect((await listApplications(db))[0].space_name).toBe("A");
-  });
-
-  it("rejects unknown verdicts, bad scores, and 'sent' without a written result", () => {
-    expect(parseResultForm(fd({ verdict: "great" })).ok).toBe(false);
-    expect(parseResultForm(fd({ referenceScore: "101" })).ok).toBe(false);
-    expect(parseResultForm(fd({ resultSent: "on" })).ok).toBe(false);
-    expect(parseResultForm(fd({ verdict: "fit", resultSent: "on" })).ok).toBe(false);
-    expect(parseResultForm(fd({}))).toEqual({ ok: true, value: { verdict: null, summary: null, referenceScore: null, resultSent: false } });
-  });
-});
-
-describe("paid feedback", () => {
-  it("cannot be marked paid or sent before the applicant requests it", async () => {
-    const { db, id, token } = await seeded();
-    const f = parseFeedbackForm(fd({ paymentConfirmed: "on", feedback: "피드백", feedbackSent: "on" }));
-    expect(await saveFeedback(db, id, f)).toBe("not-requested");
-
-    await db.prepare("UPDATE applications SET result_verdict = 'fit', result_summary = 's' WHERE id = ?").bind(id).run();
-    const { requestFeedback } = await import("~/lib/applications.server");
-    expect(await requestFeedback(db, token, true)).toBe("requested");
-    expect(await saveFeedback(db, id, f)).toBe("saved");
-    expect(await getApplication(db, id)).toMatchObject({ payment_confirmed: 1, feedback: "피드백", feedback_sent: 1 });
+    expect(await getResultByToken(db, token)).toMatchObject({ contactName: "김창업", spaceName: "A", verdict: null, ready: false });
   });
 });
 

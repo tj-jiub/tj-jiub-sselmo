@@ -8,6 +8,10 @@ export type Space = {
   slug: string;
   owner_consent: number;
   consent_file_key: string | null;
+  location_notes: string | null;
+  owner_token: string | null;
+  margin_pct: number | null;
+  scale_factor: number;
   created_at: number;
 };
 
@@ -74,4 +78,28 @@ export async function listSpaces(db: D1Database): Promise<Array<Space & { respon
 export async function listPublicSpaces(db: D1Database): Promise<Space[]> {
   const { results } = await db.prepare("SELECT * FROM spaces WHERE owner_consent = 1 ORDER BY id DESC").all<Space>();
   return results;
+}
+
+export type SpaceSettings = { locationNotes: string | null; marginPct: number | null; scaleFactor: number };
+
+export function parseSpaceSettings(form: FormData): ParseResult<SpaceSettings> {
+  const notes = String(form.get("locationNotes") ?? "").trim();
+  if (notes.length > 500) return { ok: false, error: "위치 특징은 500자 이내로 적어 주세요." };
+  const margin = String(form.get("marginPct") ?? "").trim();
+  if (margin && (!/^\d+$/.test(margin) || Number(margin) < 1 || Number(margin) > 90)) {
+    return { ok: false, error: "순이익률은 1~90 사이 정수로 적어 주세요. 비워 두면 업종별 기본값을 써요." };
+  }
+  const scaleRaw = String(form.get("scaleFactor") ?? "").trim();
+  const scale = Number(scaleRaw);
+  if (!/^\d+(\.\d+)?$/.test(scaleRaw) || scale <= 0 || scale > 1000) {
+    return { ok: false, error: "환산 배수는 0보다 크고 1000 이하인 숫자로 적어 주세요." };
+  }
+  return { ok: true, value: { locationNotes: notes || null, marginPct: margin ? Number(margin) : null, scaleFactor: scale } };
+}
+
+export async function saveSpaceSettings(db: D1Database, id: number, s: SpaceSettings): Promise<void> {
+  await db
+    .prepare("UPDATE spaces SET location_notes = ?, margin_pct = ?, scale_factor = ? WHERE id = ?")
+    .bind(s.locationNotes, s.marginPct, s.scaleFactor, id)
+    .run();
 }

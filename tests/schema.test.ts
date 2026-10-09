@@ -10,6 +10,8 @@ describe("schema", () => {
     expect(results.map((r) => r.name)).toEqual([
       "applications",
       "broker_intros",
+      "consulting_months",
+      "educator_links",
       "spaces",
       "survey_contacts",
       "survey_responses",
