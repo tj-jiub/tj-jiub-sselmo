@@ -64,6 +64,14 @@ describe("owner token", () => {
 });
 
 describe("owner view", () => {
+  it("goes dark when the building-owner consent is withdrawn", async () => {
+    const { db, spaceId } = await world();
+    const token = await ensureOwnerToken(db, spaceId);
+    expect(await getOwnerView(db, token)).not.toBeNull();
+    await db.prepare("UPDATE spaces SET owner_consent = 0 WHERE id = ?").bind(spaceId).run();
+    expect(await getOwnerView(db, token)).toBeNull();
+  });
+
   it("shows at most 5 candidates scoring >= 60, best first, from this space only", async () => {
     const { db, spaceId, other, add } = await world();
     for (const s of [95, 90, 85, 80, 75, 70, 65]) await add(spaceId, s, "done");

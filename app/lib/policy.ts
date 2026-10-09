@@ -15,7 +15,7 @@ export const CONSENTS = {
   // TODO(legal): overseas transfer / processing-delegation wording (Anthropic, US) needs review.
   ai: {
     label: "AI 분석 처리위탁·국외이전 동의",
-    detail: "사업계획 내용을 AI(Anthropic, 미국)로 분석해요. 이름과 이메일은 보내지 않아요.",
+    detail: "사업계획에 적은 내용(첨부 PDF 포함)을 AI(Anthropic, 미국)로 분석해요. 이름과 이메일 항목은 보내지 않지만, 사업계획 글에 직접 적은 개인정보는 그대로 전달돼요.",
   },
   // TODO(legal): consulting terms (fee structure, separation from the lease) need review.
   consulting: {

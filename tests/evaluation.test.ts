@@ -86,6 +86,24 @@ describe("runEvaluation", () => {
     expect(sent).toHaveLength(1);
   });
 
+  it("two concurrent runs send only one mail", async () => {
+    const { db, id } = await setup();
+    const { sent, mailer } = sender();
+    const deps = { evaluator: fakeEvaluator, mailer, origin: "o", pdf: noPdf };
+    await Promise.all([runEvaluation(db, id, deps), runEvaluation(db, id, deps)]);
+    expect(sent).toHaveLength(1);
+  });
+
+  it("releases the mail claim when sending fails, so a retry can mail", async () => {
+    const { db, id } = await setup();
+    const bad: Mailer = { send: async () => { throw new Error("down"); } };
+    await runEvaluation(db, id, { evaluator: fakeEvaluator, mailer: bad, origin: "o", pdf: noPdf });
+    expect((await getApplication(db, id))!.result_mailed_at).toBeNull();
+    const { sent, mailer } = sender();
+    await runEvaluation(db, id, { evaluator: fakeEvaluator, mailer, origin: "o", pdf: noPdf });
+    expect(sent).toHaveLength(1);
+  });
+
   it("records a failure and keeps the application retryable", async () => {
     const { db, id } = await setup();
     const broken: Evaluator = { name: "broken", evaluate: async () => { throw new Error("upstream 500"); } };

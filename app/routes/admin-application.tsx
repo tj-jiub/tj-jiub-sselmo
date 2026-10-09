@@ -201,9 +201,12 @@ export default function AdminApplication({ loaderData, actionData }: Route.Compo
           </Section>
 
           <Section title="결과 전달">
-            {autoMail ? (
-              <p className="text-sm">{app.result_mailed_at ? `자동 메일 발송됨 · ${date(app.result_mailed_at)}` : "발송 대기"}</p>
-            ) : (
+            {autoMail && (
+              <p className="mb-3 text-sm">
+                {app.result_mailed_at ? `자동 메일 발송됨 · ${date(app.result_mailed_at)}` : "자동 메일 대기 중 (실패했다면 아래 링크를 직접 보내세요)"}
+              </p>
+            )}
+            {(!autoMail || !app.result_mailed_at) && (
               <Form method="post" className="space-y-3 text-sm">
                 <input type="hidden" name="intent" value="set-mailed" />
                 <div className="flex items-center gap-2 rounded-[10px] bg-soft px-3 py-2.5">

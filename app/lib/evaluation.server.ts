@@ -103,19 +103,18 @@ export async function runEvaluation(db: D1Database, applicationId: number, deps:
   return "done";
 }
 
-// Mail once: a re-evaluation must not send a second mail. A mail error is not an evaluation error.
+// Mail once: claim the slot atomically so concurrent runs (double-clicked 재평가) cannot both
+// send, and release it if sending fails. A mail error is not an evaluation error.
 async function mailResult(db: D1Database, id: number, deps: RunDeps, now: number): Promise<void> {
   if (!deps.mailer) return;
-  const row = await db.prepare("SELECT email, result_token, result_mailed_at FROM applications WHERE id = ?").bind(id).first<{
-    email: string;
-    result_token: string;
-    result_mailed_at: number | null;
-  }>();
-  if (!row || row.result_mailed_at !== null) return;
+  const claim = await db.prepare("UPDATE applications SET result_mailed_at = ? WHERE id = ? AND result_mailed_at IS NULL").bind(now, id).run();
+  if (claim.meta.changes !== 1) return;
   try {
+    const row = await db.prepare("SELECT email, result_token FROM applications WHERE id = ?").bind(id).first<{ email: string; result_token: string }>();
+    if (!row) throw new Error("application vanished");
     await deps.mailer.send(row.email, resultMailBody(`${deps.origin}/result/${row.result_token}`));
-    await db.prepare("UPDATE applications SET result_mailed_at = ? WHERE id = ?").bind(now, id).run();
   } catch (e) {
+    await db.prepare("UPDATE applications SET result_mailed_at = NULL WHERE id = ?").bind(id).run();
     console.error("result mail failed", e instanceof Error ? e.message : e);
   }
 }

@@ -44,7 +44,8 @@ export const fakeEvaluator: Evaluator = {
 };
 
 type FetchLike = (url: string, init?: RequestInit) => Promise<Response>;
-const TIMEOUT_MS = 90_000;
+// ctx.waitUntil work is cut off ~30s after the response; time out earlier so the row ends as `failed`, not stuck `pending`.
+const TIMEOUT_MS = 25_000;
 
 function extractJson(text: string): unknown {
   const trimmed = text.trim();

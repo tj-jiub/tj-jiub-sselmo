@@ -77,11 +77,11 @@ export type OwnerView = {
   candidates: Candidate[];
 };
 
-// Not gated by owner_consent: the unguessable token is the key, and the operator
-// creates the link for the owner on purpose.
+// The token is the key, but withdrawing the building-owner consent still takes the
+// page down (same rule as every other public page).
 export async function getOwnerView(db: D1Database, token: string): Promise<OwnerView | null> {
   if (!token) return null;
-  const space = await db.prepare("SELECT id, name, neighborhood FROM spaces WHERE owner_token = ?").bind(token).first<{
+  const space = await db.prepare("SELECT id, name, neighborhood FROM spaces WHERE owner_token = ? AND owner_consent = 1").bind(token).first<{
     id: number;
     name: string;
     neighborhood: string;
