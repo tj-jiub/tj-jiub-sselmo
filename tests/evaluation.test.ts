@@ -3,7 +3,7 @@ import { createTestDb } from "./helpers/d1";
 import { createSpace } from "~/lib/spaces.server";
 import { createApplication, getApplication, parseApplication } from "~/lib/applications.server";
 import { buildEvalInput, runEvaluation } from "~/lib/evaluation.server";
-import { fakeEvaluator, type Evaluator } from "~/lib/evaluator.server";
+import { fakeEvaluator, pickEvaluator, type Evaluator } from "~/lib/evaluator.server";
 import { buildPrompt } from "~/lib/ai-prompt";
 import type { Mailer } from "~/lib/mail.server";
 
@@ -102,6 +102,17 @@ describe("runEvaluation", () => {
     const { sent, mailer } = sender();
     await runEvaluation(db, id, { evaluator: fakeEvaluator, mailer, origin: "o", pdf: noPdf });
     expect(sent).toHaveLength(1);
+  });
+
+  it("an unconfigured evaluator (no key, no EVALUATOR=fake) ends as failed with a clear ai_error and no mail", async () => {
+    const { db, id } = await setup();
+    const { sent, mailer } = sender();
+    const out = await runEvaluation(db, id, { evaluator: pickEvaluator({}), mailer, origin: "o", pdf: noPdf });
+    expect(out).toBe("failed");
+    const row = await getApplication(db, id);
+    expect(row).toMatchObject({ ai_status: "failed", ai_score: null });
+    expect(row!.ai_error).toMatch(/ANTHROPIC_API_KEY/);
+    expect(sent).toHaveLength(0);
   });
 
   it("records a failure and keeps the application retryable", async () => {

@@ -74,10 +74,19 @@ describe("anthropic evaluator", () => {
 });
 
 describe("pickEvaluator", () => {
-  it("uses the fake when asked or when no key is set", () => {
+  it("uses the fake only when EVALUATOR=fake is explicit", () => {
+    expect(pickEvaluator({ EVALUATOR: "fake" }).name).toBe("fake");
     expect(pickEvaluator({ EVALUATOR: "fake", ANTHROPIC_API_KEY: "k" }).name).toBe("fake");
-    expect(pickEvaluator({}).name).toBe("fake");
-    expect(pickEvaluator({ ANTHROPIC_API_KEY: "" }).name).toBe("fake");
+  });
+  it("uses anthropic when a key is set and fake was not requested", () => {
     expect(pickEvaluator({ ANTHROPIC_API_KEY: "k" }).name).toBe("anthropic");
+    expect(pickEvaluator({ EVALUATOR: "anthropic", ANTHROPIC_API_KEY: "k" }).name).toBe("anthropic");
+  });
+  it("never falls back to the fake when the key is missing: evaluation rejects with a clear error", async () => {
+    for (const env of [{}, { ANTHROPIC_API_KEY: "" }, { EVALUATOR: "anthropic" }, { EVALUATOR: "" }]) {
+      const ev = pickEvaluator(env);
+      expect(ev.name).not.toBe("fake");
+      await expect(ev.evaluate(input)).rejects.toThrow(/ANTHROPIC_API_KEY/);
+    }
   });
 });

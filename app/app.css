@@ -5,7 +5,7 @@
   --color-ink: #1d1d1b;
   --color-paper: #ffffff;
   --color-soft: #fafaf7;
-  --color-muted: #6f6d68;
+  --color-muted: #5f5d58;
   --color-line: #e8e6e1;
   --color-yellow: #fff0a6;
   --color-yellow-deep: #f2d65c;
@@ -14,9 +14,14 @@
   --color-sel: rgba(255, 221, 87, 0.45);
 
   --font-sans: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  /* Digits only (rank numbers, list numbers). Never for Korean labels. */
+  --font-mono: "Geist Mono", ui-monospace, Menlo, monospace;
 
   /* Golden-ratio type scale: 16px base, x1.618 up, /sqrt(phi) down for captions. */
-  --text-cap: 12.6px;
+  /* Readability floor: nothing renders below 15px (Tailwind's xs/sm are lifted to it too). */
+  --text-xs: 15px;
+  --text-sm: 15px;
+  --text-cap: 15px;
   --text-cap--line-height: 1.618;
   --text-h3: 25.9px;
   --text-h3--line-height: 1.382;
@@ -69,9 +74,11 @@ textarea {
   color: var(--color-ink);
 }
 
-/* Highlight: looks like a mouse-drag text selection, a solid block over the full line box. */
-mark.hl {
-  background: var(--selection);
+/* Highlight, trimmed to the line box: Noto Sans KR's glyph box (~1.45em) is taller than tight display
+   line-heights, so a plain background bleeds into the line above. At most one per screen, headline only. */
+mark.hl,
+mark.cp-hl {
+  background: linear-gradient(transparent 11%, var(--selection) 11%, var(--selection) 89%, transparent 89%);
   color: inherit;
   padding: 0;
   border-radius: 0;
@@ -93,4 +100,148 @@ mark.hl {
   .split-rev {
     grid-template-columns: var(--golden-split-rev);
   }
+}
+
+/* Digits only. */
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------------ */
+/* Continuous pages (R1, O1, home, /find results). Source: docs/mockup-v11.html.
+   Markup comes from components/motion.tsx; behaviour from useContinuousPage. */
+:root {
+  --cp-enter: 900ms;
+  --cp-move: 1100ms;
+  --cp-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --cp-gray: #cfcdc8;
+}
+
+/* Reveal is armed by the inline script in root.tsx (html.mo), so no-JS and reduced-motion see everything. */
+html.mo .rv {
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity var(--cp-enter) var(--cp-ease),
+    transform var(--cp-enter) var(--cp-ease);
+}
+html.mo .rv.seen {
+  opacity: 1;
+  transform: none;
+}
+.rv.d1 { transition-delay: 160ms !important; }
+.rv.d2 { transition-delay: 320ms !important; }
+.rv.d3 { transition-delay: 480ms !important; }
+
+.cp { --cp-pad: 16px; }
+.cp-wrap { width: min(1180px, 100% - 32px); margin-inline: auto; }
+.cp-label { font-size: 15px; font-weight: 500; color: var(--color-muted); }
+.cp-label .n { font-family: var(--font-mono); font-size: 13px; margin-right: 8px; color: var(--color-ink); }
+.cp h1, .cp h2, .cp h3 { font-weight: 700; letter-spacing: -0.02em; text-wrap: balance; margin: 0; }
+.cp h1 { font-size: clamp(36px, 6.6vw, 67.8px); line-height: 1.146; }
+.cp h2 { font-size: clamp(28px, 4.2vw, 41.9px); line-height: 1.236; }
+.cp-p { font-size: 18px; line-height: 1.618; color: var(--color-muted); margin: 0; text-wrap: pretty; }
+
+.cp-nav { position: fixed; inset: 0 0 auto 0; z-index: 10; padding-top: env(safe-area-inset-top, 0px); }
+.cp-nav .cp-wrap { display: flex; justify-content: space-between; align-items: center; height: 64px; }
+.cp-nav nav { display: flex; gap: 26px; font-size: 15px; color: var(--color-muted); }
+
+.cp-hero {
+  min-height: 100vh; min-height: 100dvh; display: flex; align-items: center; background: var(--color-soft);
+  -webkit-mask-image: linear-gradient(#000 62%, transparent 100%); mask-image: linear-gradient(#000 62%, transparent 100%);
+}
+.cp-hero .lead { margin-top: 22px; max-width: 30em; }
+.cp-hero .meta { display: flex; flex-wrap: wrap; gap: 8px 28px; margin-top: 40px; font-size: 15px; font-weight: 500; color: var(--color-muted); }
+
+/* scroll-typed statement */
+.cp-say { padding-block: 120px 140px; }
+.cp-say .cp-label { text-align: center; }
+.cp-say .text { margin: 28px auto 0; max-width: 18em; text-align: center; font-size: clamp(32px, 5vw, 67.8px); font-weight: 700; line-height: 1.236; letter-spacing: -0.03em; }
+.cp-say .w { color: var(--color-ink); }
+html.mo .cp-say .w { color: var(--cp-gray); transition: color 260ms linear; }
+html.mo .cp-say .w.lit { color: var(--color-ink); }
+
+/* sticky heading beside a scrolling list */
+.cp-split { padding-block: 40px 140px; }
+.cp-split > .cp-wrap { display: grid; grid-template-columns: 1fr 1.618fr; gap: 64px; align-items: start; }
+.cp-split .side { position: sticky; top: 140px; }
+.cp-split .side .cp-p { margin-top: 16px; }
+.cp-rows { display: grid; }
+.cp-row { padding-block: 34px; border-top: 1px solid var(--color-line); transition: opacity 700ms var(--cp-ease); opacity: 0.32; }
+.cp-row:last-child { border-bottom: 1px solid var(--color-line); }
+.cp-row.focus { opacity: 1; }
+.cp-row .rank { font-family: var(--font-mono); font-size: 15px; color: var(--color-muted); }
+.cp-row h3 { font-size: clamp(22px, 2.6vw, 25.9px); margin-top: 6px; }
+.cp-row .phrase { margin-top: 8px; font-size: 18px; color: var(--color-ink); font-weight: 500; }
+.cp-row .detail { margin-top: 10px; font-size: 17px; line-height: 1.6; color: var(--color-ink); }
+.cp-row .sub { margin-top: 10px; font-size: 15px; color: var(--color-muted); }
+.cp-bar { height: 6px; background: var(--color-line); border-radius: 3px; margin-top: 14px; overflow: hidden; max-width: 420px; }
+.cp-bar i { display: block; height: 100%; width: 0; background: var(--color-green-deep); transition: width 1600ms var(--cp-ease); }
+.cp-row.focus .cp-bar i { width: var(--w); }
+
+/* stacked sticky cards */
+.cp-stack { padding-block: 40px 120px; background: var(--color-soft); }
+.cp-stack .head { max-width: 640px; margin-bottom: 48px; }
+.cp-stack .head h2 { margin-top: 12px; }
+.cp-cards { position: relative; }
+.cp-card {
+  position: sticky; background: var(--color-paper); border: 1px solid var(--color-line); border-radius: 18px; padding: 48px 52px;
+  display: grid; grid-template-columns: 1fr 1.618fr; gap: 56px; align-items: start; margin-bottom: 28px;
+}
+.cp-card:nth-child(1) { top: 110px; } .cp-card:nth-child(2) { top: 130px; } .cp-card:nth-child(3) { top: 150px; }
+.cp-card.top { border-color: var(--color-green-deep); }
+.cp-card .num-l { font-size: 15px; font-weight: 500; color: var(--color-muted); }
+.cp-card h3 { font-size: clamp(28px, 3.4vw, 41.9px); line-height: 1.236; margin-top: 12px; }
+.cp-card .big { font-size: clamp(30px, 4.4vw, 41.9px); font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.cp-card .basis { margin-top: 16px; font-size: 16px; color: var(--color-muted); line-height: 1.618; }
+.cp-card .warn { margin-top: 6px; font-size: 16px; color: var(--color-ink); font-weight: 500; }
+.cp-card ul { list-style: none; margin: 0; padding: 0; }
+.cp-card li { display: flex; gap: 18px; align-items: baseline; padding-block: 18px; border-top: 1px solid var(--color-line); font-size: clamp(19px, 1.8vw, 22px); font-weight: 500; line-height: 1.45; color: var(--color-ink); }
+.cp-card li:last-child { border-bottom: 1px solid var(--color-line); }
+.cp-card li .n { font-family: var(--font-mono); font-size: 15px; color: var(--color-muted); min-width: 1.6em; }
+.cp-card.dim { -webkit-mask-image: linear-gradient(0deg, rgba(0, 0, 0, 0.25) 0%, #000 50%); mask-image: linear-gradient(0deg, rgba(0, 0, 0, 0.25) 0%, #000 50%); }
+
+/* stats band and CTA */
+.cp-stats { padding-block: 96px; }
+.cp-stats > .cp-wrap { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--color-line); }
+.cp-stats .cell { padding: 28px 24px 0 0; }
+.cp-stats b { display: block; font-size: clamp(28px, 3.6vw, 41.9px); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.cp-stats span { font-size: 15px; color: var(--color-muted); }
+.cp-cta { padding-block: 120px 160px; text-align: center; }
+.cp-cta .cp-p { margin-top: 14px; }
+.cp-cta h2 { margin-top: 12px; }
+.cp-btn { display: inline-flex; align-items: center; gap: 8px; margin-top: 30px; border: 1px solid var(--color-yellow-deep); background: var(--color-yellow); color: var(--color-ink); font: inherit; font-weight: 700; font-size: 17px; padding: 15px 28px; border-radius: 12px; text-decoration: none; }
+.cp-btn:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 3px; }
+.cp-notice { padding-block: 0 72px; }
+.cp-notice p { font-size: 15px; line-height: 1.6; color: var(--color-muted); border-top: 1px solid var(--color-line); padding-top: 16px; max-width: 46em; }
+
+/* one-question-per-screen steps (/find; docs/mockup-v9-focus.html) */
+.cp-steps { height: 100dvh; overflow-y: auto; overscroll-behavior: contain; scroll-snap-type: y mandatory; scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 10%, #000 90%, transparent 100%); mask-image: linear-gradient(to bottom, transparent 0, #000 10%, #000 90%, transparent 100%); }
+.cp-steps::-webkit-scrollbar { display: none; }
+.cp-panel { height: 100dvh; scroll-snap-align: center; scroll-snap-stop: always; display: flex; align-items: center; justify-content: center; padding-inline: 24px; }
+.cp-panel .inner { width: min(640px, 100%); }
+.cp-panel .in { opacity: 1; transform: none; }
+html.mo .cp-panel .in { opacity: 0; transform: translateY(18px); transition: opacity var(--cp-enter) var(--cp-ease), transform var(--cp-enter) var(--cp-ease); }
+html.mo .cp-panel.on .in { opacity: 1; transform: none; }
+html.mo .cp-panel.on .in:nth-child(2) { transition-delay: 180ms; }
+html.mo .cp-panel.on .in:nth-child(3) { transition-delay: 360ms; }
+html.mo .cp-panel.on .in:nth-child(4) { transition-delay: 540ms; }
+
+@media (max-width: 760px) {
+  .cp-nav nav { display: none; }
+  .cp-split > .cp-wrap, .cp-card, .cp-stats > .cp-wrap { grid-template-columns: 1fr; }
+  .cp-split > .cp-wrap { gap: 24px; }
+  .cp-split .side { position: static; }
+  .cp-card { padding: 24px; gap: 14px; }
+  .cp-card:nth-child(1), .cp-card:nth-child(2), .cp-card:nth-child(3) { top: 76px; }
+  .cp-say { padding-block: 80px 96px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root { --cp-enter: 0ms; --cp-move: 0ms; }
+  html.mo .rv, html.mo .cp-panel .in { opacity: 1; transform: none; transition: none; }
+  html.mo .cp-say .w { color: var(--color-ink); transition: none; }
+  .cp-row { opacity: 1; transition: none; }
+  .cp-bar i { width: var(--w); transition: none; }
 }

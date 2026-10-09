@@ -28,7 +28,7 @@ function CandidateCard({ c }: { c: Candidate }) {
         </p>
       </div>
       <p className="mt-2 text-sm leading-[1.6]">{c.summary}</p>
-      <p className="mt-2.5 text-[13px] leading-[1.6]">
+      <p className="mt-2.5 text-[15px] leading-[1.6]">
         {c.strengths.length > 0 && (
           <>
             <b>강점</b> {c.strengths.join(", ")}
@@ -98,7 +98,7 @@ export default function Owner({ loaderData }: Route.ComponentProps) {
       )}
 
       {/* TODO(legal): owner-page notice wording needs review. */}
-      <p className="mt-6 border-t border-line pt-3.5 text-[13px] text-muted">
+      <p className="mt-6 border-t border-line pt-3.5 text-[15px] text-muted">
         AI가 작성한 평가예요. 임대차 계약은 건물주님과 공인중개사가 직접 진행해요. 쓸모는 계약에 참여하지 않고, 계약의 대가를 받지 않아요.
       </p>
     </Shell>

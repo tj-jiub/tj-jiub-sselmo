@@ -88,7 +88,18 @@ export function createAnthropicEvaluator(apiKey: string, fetchImpl: FetchLike = 
 }
 
 export type EvaluatorEnv = { EVALUATOR?: string; ANTHROPIC_API_KEY?: string };
+
+// Misconfiguration must surface as `ai_status='failed'` with this message, never as a fake score
+// reaching real applicants: runEvaluation stores whatever evaluate() throws.
+const unconfiguredEvaluator: Evaluator = {
+  name: "unconfigured",
+  async evaluate() {
+    throw new Error("ANTHROPIC_API_KEY is not set (set it, or EVALUATOR=fake for local development only)");
+  },
+};
+
 export function pickEvaluator(env: EvaluatorEnv): Evaluator {
-  if (env.EVALUATOR === "fake" || !env.ANTHROPIC_API_KEY) return fakeEvaluator;
+  if (env.EVALUATOR === "fake") return fakeEvaluator;
+  if (!env.ANTHROPIC_API_KEY) return unconfiguredEvaluator;
   return createAnthropicEvaluator(env.ANTHROPIC_API_KEY);
 }
