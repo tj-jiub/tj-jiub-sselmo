@@ -7,13 +7,17 @@ import { join } from "node:path";
 
 type Param = string | number | null;
 
-export function createTestDb(): D1Database {
+export function migratedSqlite(): DatabaseSync {
   const sqlite = new DatabaseSync(":memory:");
   const dir = join(process.cwd(), "migrations");
   for (const file of readdirSync(dir).sort()) {
     sqlite.exec(readFileSync(join(dir, file), "utf8"));
   }
+  return sqlite;
+}
 
+/** Wraps an existing sqlite handle (e.g. one loaded with the seed) in the D1 shim. */
+export function wrapSqlite(sqlite: DatabaseSync): D1Database {
   const statement = (sql: string, params: Param[]) => ({
     bind: (...next: Param[]) => statement(sql, next),
     first: async () => (sqlite.prepare(sql).get(...params) as unknown) ?? null,
@@ -25,4 +29,10 @@ export function createTestDb(): D1Database {
   });
 
   return { prepare: (sql: string) => statement(sql, []) } as unknown as D1Database;
+}
+
+export function createTestDb(opts: { sql?: string } = {}): D1Database {
+  const sqlite = migratedSqlite();
+  if (opts.sql) sqlite.exec(opts.sql);
+  return wrapSqlite(sqlite);
 }

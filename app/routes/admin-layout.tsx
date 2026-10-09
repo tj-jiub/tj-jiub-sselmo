@@ -13,7 +13,7 @@ export default function AdminLayout() {
       <nav className="border-b border-line">
         <div className="mx-auto flex max-w-[1180px] items-center justify-between px-4 py-3.5 text-sm lg:px-12">
           <Link to="/admin" className="text-lg font-bold tracking-tight">
-            썰모 관리자
+            쓸모 관리자
           </Link>
           <Form method="post" action="/admin/logout">
             <button className="min-h-10 text-muted underline-offset-4 hover:text-ink hover:underline">로그아웃</button>

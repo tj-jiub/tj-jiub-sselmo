@@ -1,27 +1,35 @@
 import { data, Form, Link } from "react-router";
 import type { Route } from "./+types/admin-application";
 import { requireAdmin } from "~/lib/auth.server";
-import {
-  createBrokerIntro,
-  getApplication,
-  listBrokerIntros,
-  parseFeedbackForm,
-  parseResultForm,
-  saveFeedback,
-  saveResult,
-} from "~/lib/applications.server";
+import { createBrokerIntro, getApplication, listBrokerIntros, setResultMailed } from "~/lib/applications.server";
+import { addConsultingMonth, addEducatorLink, listConsultingMonths, listEducatorLinks } from "~/lib/consulting.server";
+import { parseConsultingMonth, parseEducatorLink } from "~/lib/consulting";
+import { markPending } from "~/lib/evaluation.server";
+import { scheduleEvaluation } from "~/lib/jobs.server";
+import { mailerFromEnv } from "~/lib/mail.server";
+import { SECTION_KEYS, SECTION_LABELS, type AiReport } from "~/lib/ai-report";
 import { VERDICTS } from "~/lib/verdicts";
-import { FEE_AMOUNT_KRW, FEE_SERVICE_NAME } from "~/lib/policy";
+import { formatManwon, formatWon } from "~/lib/money";
 import { CopyButton } from "~/components/CopyButton";
-import { ErrorNote, Section, Shell, Title } from "~/components/ui";
+import { btnSmall, btnSmallGhost, ErrorNote, Section, Shell, Title } from "~/components/ui";
 
 export async function loader({ request, params, context }: Route.LoaderArgs) {
   const env = context.cloudflare.env;
   await requireAdmin(request, env);
   const app = await getApplication(env.DB, Number(params.id));
   if (!app) throw new Response("Not found", { status: 404 });
-  return { app, intros: await listBrokerIntros(env.DB, app.id), resultUrl: `${new URL(request.url).origin}/result/${app.result_token}` };
+  return {
+    app,
+    intros: await listBrokerIntros(env.DB, app.id),
+    months: app.track === "ssulmo" ? await listConsultingMonths(env.DB, app.id) : [],
+    educators: app.track === "ssulmo" ? await listEducatorLinks(env.DB, app.id) : [],
+    report: app.ai_report ? (JSON.parse(app.ai_report) as AiReport) : null,
+    autoMail: mailerFromEnv(env) !== null,
+    resultUrl: `${new URL(request.url).origin}/result/${app.result_token}`,
+  };
 }
+
+const fail = (error: string) => data({ error, saved: null }, { status: 400 });
 
 export async function action({ request, params, context }: Route.ActionArgs) {
   const env = context.cloudflare.env;
@@ -30,38 +38,60 @@ export async function action({ request, params, context }: Route.ActionArgs) {
   const form = await request.formData();
   const intent = form.get("intent");
 
-  if (intent === "save-result") {
-    const r = parseResultForm(form);
-    if (!r.ok) return data({ error: r.error, saved: null }, { status: 400 });
-    await saveResult(env.DB, id, r.value);
-    return { error: null, saved: "result" };
+  if (intent === "re-evaluate") {
+    await markPending(env.DB, id);
+    scheduleEvaluation(context, id, new URL(request.url).origin);
+    return { error: null, saved: "re-evaluate" };
   }
-  if (intent === "save-feedback") {
-    if ((await saveFeedback(env.DB, id, parseFeedbackForm(form))) === "not-requested") {
-      return data({ error: "신청자가 아직 피드백을 신청하지 않았어요.", saved: null }, { status: 400 });
-    }
-    return { error: null, saved: "feedback" };
+  if (intent === "set-mailed") {
+    await setResultMailed(env.DB, id, form.get("mailed") === "on");
+    return { error: null, saved: "mailed" };
+  }
+  if (intent === "add-month") {
+    const parsed = parseConsultingMonth(form);
+    if (!parsed.ok) return fail(parsed.error);
+    const result = await addConsultingMonth(env.DB, id, parsed.value);
+    if (result === "duplicate") return fail("이미 기록한 달이에요.");
+    if (result === "not-ssulmo") return fail("쓸모 트랙 신청자만 월별 기록을 남길 수 있어요.");
+    return { error: null, saved: "month" };
+  }
+  if (intent === "add-educator") {
+    const parsed = parseEducatorLink(form);
+    if (!parsed.ok) return fail(parsed.error);
+    await addEducatorLink(env.DB, id, parsed.value);
+    return { error: null, saved: "educator" };
   }
   if (intent === "add-intro") {
     const result = await createBrokerIntro(env.DB, id, String(form.get("brokerName") ?? ""), String(form.get("introducedOn") ?? ""));
-    if (result === "no-consent") return data({ error: "신청자의 소개 동의가 없어 기록할 수 없어요.", saved: null }, { status: 400 });
-    if (result === "invalid") return data({ error: "중개사 이름과 날짜를 확인해 주세요.", saved: null }, { status: 400 });
+    if (result === "no-consent") return fail("신청자의 소개 동의가 없어 기록할 수 없어요.");
+    if (result === "invalid") return fail("중개사 이름과 날짜를 확인해 주세요.");
     return { error: null, saved: "intro" };
   }
-  return data({ error: "알 수 없는 요청이에요.", saved: null }, { status: 400 });
+  return fail("알 수 없는 요청이에요.");
 }
 
 const date = (ms: number) => new Date(ms).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
 const field = "w-full rounded-[10px] border border-line px-3 py-2.5 focus:border-ink focus:outline-none";
 
+const won = (krw: number) => (krw % 10_000 === 0 ? `${formatManwon(krw)}원` : formatWon(krw));
+const signed = (krw: number) => (krw < 0 ? `−${formatManwon(-krw)}원` : krw > 0 ? `+${formatManwon(krw)}원` : "0원");
+const AI_STATUS = {
+  pending: { label: "대기", tone: "bg-soft" },
+  done: { label: "완료", tone: "bg-green" },
+  failed: { label: "실패", tone: "bg-yellow" },
+} as const;
+
 export default function AdminApplication({ loaderData, actionData }: Route.ComponentProps) {
-  const { app, intros, resultUrl } = loaderData;
+  const { app, intros, months, educators, report, autoMail, resultUrl } = loaderData;
   const canIntroduce = app.consent_broker_intro === 1;
+  const ssulmo = app.track === "ssulmo";
+  const status = AI_STATUS[app.ai_status];
+  const verdict = VERDICTS.find((v) => v.value === (report?.verdict ?? app.result_verdict))?.label;
   const saved = actionData?.saved;
 
   return (
     <Shell wide nav={false}>
-      <Title eyebrow={app.space_name} sub={`접수 ${date(app.created_at)}`}>
+      <Title eyebrow={`${app.space_name} · ${ssulmo ? "쓸모 트랙" : "일반 신청"}`} sub={`접수 ${date(app.created_at)}`}>
         {app.contact_name} · {app.business_type}
       </Title>
       <ErrorNote message={actionData?.error} />
@@ -93,72 +123,9 @@ export default function AdminApplication({ loaderData, actionData }: Route.Compo
               <li>개인정보 수집·이용: {date(app.consent_privacy_at)}</li>
               <li>중개 소개 조건 안내: {date(app.consent_intro_terms_at)}</li>
               <li>중개사 소개 동의: {app.consent_broker_intro_at ? date(app.consent_broker_intro_at) : "동의 안 함"}</li>
-              <li>피드백 이용료 안내: {app.consent_fee_terms_at ? date(app.consent_fee_terms_at) : "해당 없음"}</li>
+              <li>AI 처리위탁 동의: {app.consent_ai_at ? date(app.consent_ai_at) : "기록 없음"}</li>
+              <li>컨설팅 약관 동의: {app.consent_consulting_at ? date(app.consent_consulting_at) : "해당 없음"}</li>
             </ul>
-          </Section>
-        </div>
-
-        <div className="min-w-0">
-          <Section title="1. 검토 결과 (무료)">
-            <Form method="post" className="space-y-4 text-sm">
-              <input type="hidden" name="intent" value="save-result" />
-              <fieldset>
-                <legend className="mb-2 font-medium">한 줄 판정</legend>
-                <div className="flex flex-wrap gap-2">
-                  {VERDICTS.map((v) => (
-                    <label key={v.value} className="cursor-pointer">
-                      <input type="radio" name="verdict" value={v.value} defaultChecked={app.result_verdict === v.value} className="peer sr-only" />
-                      <span className="block rounded-full border border-line px-3.5 py-1.5 peer-checked:border-yellow-deep peer-checked:bg-yellow">
-                        {v.label}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
-              <label className="block">
-                <span className="mb-1.5 block font-medium">요약 (신청자에게 보여요)</span>
-                <textarea name="summary" defaultValue={app.result_summary ?? ""} maxLength={1000} className={`${field} min-h-28`} />
-              </label>
-              <label className="block">
-                <span className="mb-1.5 block font-medium">참고 점수 (참고용, 0~100 · 신청자에게 안 보여요)</span>
-                <input name="referenceScore" inputMode="numeric" defaultValue={app.reference_score ?? ""} className={`${field} w-28`} />
-              </label>
-              <div className="flex items-center gap-2 rounded-[10px] bg-soft px-3 py-2.5">
-                <span className="min-w-0 flex-1 truncate text-xs">{resultUrl}</span>
-                <CopyButton text={resultUrl} label="링크 복사" />
-              </div>
-              <label className="flex items-center gap-2">
-                <input type="checkbox" name="resultSent" defaultChecked={app.result_sent === 1} className="size-4 accent-ink" />
-                결과 메일 보냄 (직접 보낸 뒤 체크)
-              </label>
-              <button className="rounded-[10px] border border-ink bg-yellow px-4 py-2 font-bold text-ink">저장</button>
-              {saved === "result" && <span className="ml-3 text-muted">저장했어요.</span>}
-            </Form>
-          </Section>
-
-          <Section title={`2. ${FEE_SERVICE_NAME} (유료 · ${FEE_AMOUNT_KRW.toLocaleString("ko-KR")}원)`}>
-            {app.feedback_requested_at ? (
-              <Form method="post" className="space-y-4 text-sm">
-                <input type="hidden" name="intent" value="save-feedback" />
-                <p className="text-muted">신청자가 피드백을 신청했어요 · {date(app.feedback_requested_at)}</p>
-                <label className="flex items-center gap-2">
-                  <input type="checkbox" name="paymentConfirmed" defaultChecked={app.payment_confirmed === 1} className="size-4 accent-ink" />
-                  입금 확인
-                </label>
-                <label className="block">
-                  <span className="mb-1.5 block font-medium">서면 피드백</span>
-                  <textarea name="feedback" defaultValue={app.feedback ?? ""} className={`${field} min-h-40`} />
-                </label>
-                <label className="flex items-center gap-2">
-                  <input type="checkbox" name="feedbackSent" defaultChecked={app.feedback_sent === 1} className="size-4 accent-ink" />
-                  피드백 발송함 (직접 보낸 뒤 체크)
-                </label>
-                <button className="rounded-[10px] border border-ink bg-yellow px-4 py-2 font-bold text-ink">저장</button>
-                {saved === "feedback" && <span className="ml-3 text-muted">저장했어요.</span>}
-              </Form>
-            ) : (
-              <p className="rounded-[10px] border border-dashed border-line p-3 text-sm text-muted">아직 피드백을 신청하지 않았어요.</p>
-            )}
           </Section>
 
           <Section title="중개사 소개 기록">
@@ -167,13 +134,13 @@ export default function AdminApplication({ loaderData, actionData }: Route.Compo
                 <input type="hidden" name="intent" value="add-intro" />
                 <label>
                   <span className="mb-1 block">중개사 이름</span>
-                  <input name="brokerName" required maxLength={60} className="rounded-[10px] border border-line min-h-10 px-3 py-2" />
+                  <input name="brokerName" required maxLength={60} className="min-h-10 rounded-[10px] border border-line px-3 py-2" />
                 </label>
                 <label>
                   <span className="mb-1 block">소개한 날짜</span>
-                  <input name="introducedOn" type="date" required className="rounded-[10px] border border-line min-h-10 px-3 py-2" />
+                  <input name="introducedOn" type="date" required className="min-h-10 rounded-[10px] border border-line px-3 py-2" />
                 </label>
-                <button className="rounded-[10px] border border-ink bg-yellow px-4 py-2 font-bold text-ink">기록</button>
+                <button className={btnSmall}>기록</button>
               </Form>
             ) : (
               <p className="mb-4 rounded-[10px] border border-dashed border-line p-3 text-sm text-muted">
@@ -189,6 +156,146 @@ export default function AdminApplication({ loaderData, actionData }: Route.Compo
               ))}
             </ul>
           </Section>
+        </div>
+
+        <div className="min-w-0">
+          <Section title="AI 평가">
+            <p className="mb-3 text-sm">
+              <span className={`rounded-full border border-line px-2.5 py-0.5 text-cap font-bold ${status.tone}`}>{status.label}</span>
+            </p>
+            {app.ai_status === "done" && report && (
+              <>
+                <p className="text-[15px]">
+                  <b>{report.score}점</b> (참고용){verdict ? ` · ${verdict}` : ""}
+                </p>
+                <p className="mt-1.5 text-cap text-muted">
+                  강점: {report.strengths.join(", ")} · 위험: {report.risks.join(", ")}
+                </p>
+                <p className="mt-1.5 text-cap text-muted">
+                  {app.ai_model} · {app.ai_evaluated_at ? date(app.ai_evaluated_at) : ""}
+                </p>
+                <details className="mt-3 rounded-[14px] border border-line p-4 text-sm">
+                  <summary className="cursor-pointer font-medium">리포트 전체 보기</summary>
+                  <p className="mt-3">{report.summary}</p>
+                  {SECTION_KEYS.map((k) => (
+                    <div key={k} className="mt-3">
+                      <h3 className="text-cap font-bold text-muted">{SECTION_LABELS[k]}</h3>
+                      <p className="mt-1 whitespace-pre-wrap">{report.sections[k]}</p>
+                    </div>
+                  ))}
+                  {report.notes?.map((n) => (
+                    <p key={n} className="mt-3 text-cap text-muted">
+                      {n}
+                    </p>
+                  ))}
+                </details>
+              </>
+            )}
+            {app.ai_status === "failed" && <p className="text-sm text-muted">평가에 실패했어요: {app.ai_error ?? "원인 미상"}</p>}
+            {app.ai_status === "pending" && <p className="text-sm text-muted">평가를 기다리고 있어요. 오래 걸리면 재평가를 눌러 주세요.</p>}
+            <Form method="post" className="mt-3 flex items-center gap-3">
+              <input type="hidden" name="intent" value="re-evaluate" />
+              <button className={btnSmallGhost}>재평가</button>
+              {saved === "re-evaluate" && <span className="text-sm text-muted">다시 평가를 시작했어요.</span>}
+            </Form>
+          </Section>
+
+          <Section title="결과 전달">
+            {autoMail ? (
+              <p className="text-sm">{app.result_mailed_at ? `자동 메일 발송됨 · ${date(app.result_mailed_at)}` : "발송 대기"}</p>
+            ) : (
+              <Form method="post" className="space-y-3 text-sm">
+                <input type="hidden" name="intent" value="set-mailed" />
+                <div className="flex items-center gap-2 rounded-[10px] bg-soft px-3 py-2.5">
+                  <span className="min-w-0 flex-1 truncate text-xs">{resultUrl}</span>
+                  <CopyButton text={resultUrl} label="링크 복사" />
+                </div>
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" name="mailed" defaultChecked={app.result_mailed_at !== null} className="size-4 accent-ink" />
+                  결과 메일 보냄 (직접 보낸 뒤 체크)
+                </label>
+                <button className={btnSmallGhost}>저장</button>
+                {saved === "mailed" && <span className="ml-3 text-muted">저장했어요.</span>}
+              </Form>
+            )}
+          </Section>
+
+          {ssulmo && (
+            <>
+              <Section title="쓸모 트랙 · 월별 기록">
+                {months.length > 0 && (
+                  <table className="mb-4 w-full text-left text-sm">
+                    <thead className="text-cap text-muted">
+                      <tr>
+                        <th className="py-2 font-medium">월</th>
+                        <th className="py-2 font-medium">매출</th>
+                        <th className="py-2 font-medium">손익</th>
+                        <th className="py-2 font-medium">수수료(1%)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-line tabular-nums">
+                      {months.map((m) => (
+                        <tr key={m.id}>
+                          <td className="py-2.5">{m.month}</td>
+                          <td className="py-2.5">{won(m.revenue_krw)}</td>
+                          <td className="py-2.5">{signed(m.profit_krw)}</td>
+                          <td className="py-2.5">{m.fee_krw === 0 ? "0원" : won(m.fee_krw)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+                <Form method="post" className="flex flex-wrap items-end gap-3 text-sm">
+                  <input type="hidden" name="intent" value="add-month" />
+                  <label>
+                    <span className="mb-1 block">월</span>
+                    <input name="month" type="month" required className="min-h-10 rounded-[10px] border border-line px-3 py-2" />
+                  </label>
+                  <label>
+                    <span className="mb-1 block">매출(만원)</span>
+                    <input name="revenueManwon" inputMode="numeric" required className="min-h-10 w-28 rounded-[10px] border border-line px-3 py-2" />
+                  </label>
+                  <label>
+                    <span className="mb-1 block">손익(만원, 손해면 -40)</span>
+                    <input name="profitManwon" inputMode="numeric" required className="min-h-10 w-28 rounded-[10px] border border-line px-3 py-2" />
+                  </label>
+                  <button className={btnSmall}>기록 추가</button>
+                </Form>
+                {saved === "month" && <p className="mt-2 text-sm text-muted">기록했어요.</p>}
+                {/* TODO(legal): fee rate (FEE_RATE in consulting.ts), loss-month waiver and billing need lawyer review before any charge. */}
+                <p className="mt-3 text-cap text-muted">기록과 계산만 해요. 실제 청구·결제는 하지 않아요.</p>
+              </Section>
+
+              <Section title="교육자 연결">
+                {educators.length > 0 && (
+                  <ul className="mb-4 divide-y divide-line text-sm">
+                    {educators.map((e) => (
+                      <li key={e.id} className="py-2">
+                        {e.organization} · {e.educator_name} · {e.connected_on}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <Form method="post" className="flex flex-wrap items-end gap-3 text-sm">
+                  <input type="hidden" name="intent" value="add-educator" />
+                  <label>
+                    <span className="mb-1 block">기관</span>
+                    <input name="organization" required maxLength={60} className="min-h-10 rounded-[10px] border border-line px-3 py-2" />
+                  </label>
+                  <label>
+                    <span className="mb-1 block">교육자 이름</span>
+                    <input name="educatorName" required maxLength={40} className="min-h-10 rounded-[10px] border border-line px-3 py-2" />
+                  </label>
+                  <label>
+                    <span className="mb-1 block">연결한 날짜</span>
+                    <input name="connectedOn" type="date" required className="min-h-10 rounded-[10px] border border-line px-3 py-2" />
+                  </label>
+                  <button className={btnSmall}>연결 기록</button>
+                </Form>
+                {saved === "educator" && <p className="mt-2 text-sm text-muted">기록했어요.</p>}
+              </Section>
+            </>
+          )}
         </div>
       </div>
 
