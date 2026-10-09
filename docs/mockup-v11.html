@@ -33,7 +33,9 @@ h1, h2, h3 { font-weight: 700; letter-spacing: -.02em; text-wrap: balance; margi
 h1 { font-size: clamp(36px, 6.6vw, 67.8px); line-height: 1.146; }
 h2 { font-size: clamp(28px, 4.2vw, 41.9px); line-height: 1.236; }
 p { font-size: 18px; line-height: 1.618; color: var(--muted); margin: 0; text-wrap: pretty; }
-mark { background: var(--hl); color: inherit; padding: 0; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+/* Selection-style highlight trimmed to the line box: Noto Sans KR's glyph box (~1.45em) is taller than
+   tight display line-heights, so a plain background bleeds into the line above. */
+mark { background: linear-gradient(transparent 11%, var(--hl) 11%, var(--hl) 89%, transparent 89%); color: inherit; padding: 0; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
 
 /* nav */
 .nav { position: fixed; inset: 0 0 auto 0; z-index: 10; padding-top: env(safe-area-inset-top, 0px); }
