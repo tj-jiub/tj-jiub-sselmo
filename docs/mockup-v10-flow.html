@@ -1,0 +1,245 @@
+<title>쓸모 이어지는 스크롤 시안</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Geist+Mono:wght@500&display=swap">
+<style>
+/* Layout: one continuous page in the tbd-studio pattern — full-height hero that dissolves into the next block, a sticky heading beside a scrolling list (focus row lit, others dim), stacked sticky cards, a compact stats band. Light-only by design (mirrors the product). */
+:root {
+  --ink: #1d1d1b;
+  --paper: #ffffff;
+  --soft: #fafaf7;
+  --muted: #6f6d68;
+  --line: #e8e6e1;
+  --yellow: #fff0a6;
+  --yellow-deep: #f2d65c;
+  --green: #d3f0bf;
+  --green-deep: #8fcb6e;
+  --hl: rgba(255, 221, 87, 0.45);
+  --sans: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --mono: "Geist Mono", ui-monospace, Menlo, monospace;
+  --enter: 900ms;
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: auto; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); word-break: keep-all; overflow-wrap: break-word; }
+::selection { background: var(--hl); color: var(--ink); }
+
+.wrap { width: min(1180px, 100% - 32px); margin-inline: auto; }
+.label { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+h1, h2, h3 { font-weight: 700; letter-spacing: -.02em; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(36px, 6.6vw, 67.8px); line-height: 1.146; }
+h2 { font-size: clamp(28px, 4.2vw, 41.9px); line-height: 1.236; }
+p { font-size: 17px; line-height: 1.618; color: var(--muted); margin: 0; text-wrap: pretty; }
+mark { background: var(--hl); color: inherit; padding: 0; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+
+/* nav */
+.nav { position: fixed; inset: 0 0 auto 0; z-index: 10; padding-top: env(safe-area-inset-top, 0px); }
+.nav .wrap { display: flex; justify-content: space-between; align-items: center; height: 64px; }
+.logo { font-weight: 700; font-size: 18px; }
+.logo i { font-style: normal; background: var(--hl); }
+.nav nav { display: flex; gap: 26px; font-size: 14px; color: var(--muted); }
+
+/* reveal: slow, staggered, triggered once when a block enters */
+.rv { opacity: 0; transform: translateY(22px); transition: opacity var(--enter) var(--ease), transform var(--enter) var(--ease); }
+.rv.seen { opacity: 1; transform: none; }
+.rv.d1 { transition-delay: 160ms; } .rv.d2 { transition-delay: 320ms; } .rv.d3 { transition-delay: 480ms; }
+
+/* 1 · hero: full height, bottom edge dissolves into the next block (mask-image) */
+.hero { height: 100vh; height: 100dvh; display: flex; align-items: center; background: var(--soft);
+  -webkit-mask-image: linear-gradient(#000 62%, transparent 100%); mask-image: linear-gradient(#000 62%, transparent 100%); }
+.hero .lead { margin-top: 22px; max-width: 30em; font-size: 18px; }
+.hero .meta { display: flex; gap: 28px; margin-top: 40px; font-family: var(--mono); font-size: 11px; letter-spacing: .12em; color: var(--muted); text-transform: uppercase; }
+
+/* 2 · sticky heading beside a scrolling list; the row in the middle of the screen is lit */
+.demand { padding-block: 40px 140px; }
+.demand .wrap { display: grid; grid-template-columns: 1fr 1.618fr; gap: 64px; align-items: start; }
+.demand .side { position: sticky; top: 140px; }
+.demand .side p { margin-top: 16px; }
+.rows { display: grid; }
+.row { padding-block: 34px; border-top: 1px solid var(--line); transition: opacity 700ms var(--ease); opacity: .32; }
+.row:last-child { border-bottom: 1px solid var(--line); }
+.row.focus { opacity: 1; }
+.row .top { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; }
+.row .rank { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.row h3 { font-size: clamp(22px, 2.6vw, 25.9px); margin-top: 6px; }
+.row .phrase { margin-top: 8px; font-size: 16px; color: var(--ink); font-weight: 500; }
+.bar { height: 6px; background: var(--line); border-radius: 3px; margin-top: 14px; overflow: hidden; max-width: 420px; }
+.bar i { display: block; height: 100%; width: 0; background: var(--green-deep); transition: width 1600ms var(--ease); }
+.row.focus .bar i { width: var(--w); }
+
+/* 3 · stacked cards: each sticks a little lower, the ones behind fade at the bottom */
+.stack { padding-block: 40px 120px; background: var(--soft); }
+.stack .head { max-width: 640px; margin-bottom: 48px; }
+.stack .head p { margin-top: 14px; }
+.cards { position: relative; }
+.card { position: sticky; background: var(--paper); border: 1px solid var(--line); border-radius: 18px; padding: 34px 36px; min-height: 360px;
+  display: grid; grid-template-columns: 1fr 1.618fr; gap: 40px; margin-bottom: 28px; }
+.card:nth-child(1) { top: 110px; } .card:nth-child(2) { top: 130px; } .card:nth-child(3) { top: 150px; }
+.card .num { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.card h3 { font-size: clamp(22px, 2.6vw, 25.9px); margin-top: 10px; }
+.card .big { font-size: clamp(30px, 4.4vw, 41.9px); font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.card .basis { margin-top: 12px; font-size: 13px; color: var(--muted); line-height: 1.6; }
+.card .warn { margin-top: 6px; font-size: 13px; color: var(--ink); font-weight: 500; }
+.card ul { margin: 14px 0 0; padding-left: 18px; color: var(--ink); line-height: 1.9; font-size: 16px; }
+.card.top { border-color: var(--green-deep); }
+.card.dim { -webkit-mask-image: linear-gradient(0deg, rgba(0,0,0,.25) 0%, #000 50%); mask-image: linear-gradient(0deg, rgba(0,0,0,.25) 0%, #000 50%); }
+
+/* 4 · compact stats band */
+.stats { padding-block: 96px; }
+.stats .wrap { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line); }
+.stats div > div { padding: 28px 24px 0 0; }
+.stats b { display: block; font-size: clamp(28px, 3.6vw, 41.9px); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.stats span { font-size: 13px; color: var(--muted); }
+
+/* 5 · CTA */
+.cta { padding-block: 120px 160px; text-align: center; }
+.cta p { margin-top: 14px; }
+.btn { display: inline-flex; align-items: center; gap: 8px; margin-top: 30px; border: 1px solid var(--yellow-deep); background: var(--yellow); color: var(--ink); font: inherit; font-weight: 700; font-size: 17px; padding: 15px 28px; border-radius: 12px; text-decoration: none; }
+.btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+
+/* review notes (not part of the product) */
+.review { border-top: 1px dashed var(--line); padding-block: 56px 96px; background: var(--soft); }
+.review ol { margin: 16px 0 0; padding-left: 20px; display: grid; gap: 10px; font-size: 15px; line-height: 1.6; max-width: 70ch; }
+.review b { font-weight: 700; }
+
+@media (max-width: 760px) {
+  .nav nav { display: none; }
+  .demand .wrap, .card, .stats .wrap { grid-template-columns: 1fr; }
+  .demand .side { position: static; }
+  .card { padding: 24px; min-height: 0; gap: 14px; }
+  .card:nth-child(1), .card:nth-child(2), .card:nth-child(3) { top: 76px; }
+  .stats .wrap { gap: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root { --enter: 0ms; }
+  .row, .bar i { transition: none; }
+}
+</style>
+
+<header class="nav"><div class="wrap"><span class="logo">쓸<i>모</i></span><nav><span>공실 찾기</span><span>동네 의견</span><span>관리자</span></nav></div></header>
+
+<main>
+  <!-- 1 -->
+  <section class="hero"><div class="wrap">
+    <div class="label rv">성동구 성수동 · 창업자 모집</div>
+    <h1 class="rv d1" style="margin-top:16px">주민 100명이<br><mark>아이스크림 가게</mark>를 원해요</h1>
+    <p class="lead rv d2">성수동 골목 1층 공실이에요. 가게 앞 QR로 모은 주민 120명의 의견을 바탕으로 이 자리에 맞는 창업자를 찾고 있어요.</p>
+    <div class="meta rv d3"><span>응답 120명</span><span>모집 중</span><span>신청 무료</span></div>
+  </div></section>
+
+  <!-- 2 -->
+  <section class="demand"><div class="wrap">
+    <div class="side">
+      <div class="label rv">01 · 동네 수요</div>
+      <h2 class="rv d1" style="margin-top:12px">이 자리가 원하는 가게</h2>
+      <p class="rv d2">주민이 실제로 고른 업종 순서예요.</p>
+    </div>
+    <div class="rows">
+      <div class="row" style="--w:83%"><div class="top"><span class="rank">01</span></div><h3>아이스크림·디저트</h3><div class="phrase">응답자 120명 중 100명이 이용 의향</div><div class="bar"><i></i></div></div>
+      <div class="row" style="--w:45%"><div class="top"><span class="rank">02</span></div><h3>카페</h3><div class="phrase">응답자 120명 중 54명이 이용 의향</div><div class="bar"><i></i></div></div>
+      <div class="row" style="--w:34%"><div class="top"><span class="rank">03</span></div><h3>베이커리</h3><div class="phrase">응답자 120명 중 41명이 이용 의향</div><div class="bar"><i></i></div></div>
+    </div>
+  </div></section>
+
+  <!-- 3 -->
+  <section class="stack"><div class="wrap">
+    <div class="head">
+      <div class="label rv">02 · 이 자리에서 시작하면</div>
+      <h2 class="rv d1" style="margin-top:12px">숫자로 먼저 확인하고, 함께 시작해요</h2>
+    </div>
+    <div class="cards">
+      <article class="card top">
+        <div><div class="num">A · 예상 매출</div><h3>아이스크림 가게라면</h3></div>
+        <div>
+          <div class="label">예상 월매출</div><div class="big">1,100만~2,000만원</div>
+          <div class="label" style="margin-top:16px">예상 월 순수익</div><div class="big">200만~360만원</div>
+          <div class="basis">아이스크림을 고른 주민 100명의 1회 지출과 방문 빈도, 순이익률 18% 가정</div>
+          <div class="warn">추정치이며 실제 매출을 보장하지 않아요.</div>
+        </div>
+      </article>
+      <article class="card">
+        <div><div class="num">B · 쓸모 트랙</div><h3>손해 본 달은 0원,<br>번 달만 매출의 1%</h3></div>
+        <div><ul><li>AI 사업성 평가 리포트 무료</li><li>건물주 후보로 추천</li><li>“주민이 선택한 가게” 인증</li><li>창업 컨설팅과 주민 오픈 알림</li></ul></div>
+      </article>
+      <article class="card">
+        <div><div class="num">C · 진행 순서</div><h3>신청부터 계약까지</h3></div>
+        <div><ul><li>무료 신청 → AI 평가 결과를 메일로</li><li>상위 후보 5명을 건물주에게 소개</li><li>계약은 건물주와 공인중개사가 직접</li></ul></div>
+      </article>
+    </div>
+  </div></section>
+
+  <!-- 4 -->
+  <section class="stats"><div class="wrap">
+    <div><div><b>120명</b><span>참여한 주민</span></div></div>
+    <div><div><b>30초</b><span>QR 설문에 걸린 시간</span></div></div>
+    <div><div><b>0원</b><span>신청 비용</span></div></div>
+  </div></section>
+
+  <!-- 5 -->
+  <section class="cta"><div class="wrap">
+    <div class="label rv">03 · 지원</div>
+    <h2 class="rv d1" style="margin-top:12px">이 자리의 주인공을 찾고 있어요</h2>
+    <p class="rv d2">신청은 무료예요. 결과는 메일로 보내드려요.</p>
+    <a class="btn rv d3" href="#review">무료로 지원하기 →</a>
+  </div></section>
+
+  <section class="review" id="review"><div class="wrap">
+    <div class="label">시안 v10 · 확인해 주세요</div>
+    <h2 style="margin-top:12px;font-size:25.9px">v9에서 바뀐 점</h2>
+    <ol>
+      <li><b>한 장씩 끊지 않고 이어지는 한 페이지</b>예요. 블록마다 높이가 달라요(첫 화면만 화면 높이).</li>
+      <li><b>가장자리 페이드:</b> 첫 화면 아래쪽이 다음 블록으로 흐리게 녹아들고, 뒤에 깔린 카드는 아래가 흐려져요.</li>
+      <li><b>포커스 강조:</b> 업종 목록은 화면 가운데에 온 줄만 선명해지고 나머지는 옅어요. 왼쪽 제목은 고정돼 있어 맥락이 끊기지 않아요.</li>
+      <li><b>겹쳐 쌓이는 카드:</b> 예상 매출 → 쓸모 트랙 → 진행 순서가 스크롤하면 위로 차곡차곡 쌓여요.</li>
+      <li><b>스크롤 감도:</b> 휠을 굴리면 바로 튀지 않고 부드럽게 따라와요. 등장은 0.9초에 차례로 나타나요.</li>
+      <li><b>질문 화면</b>(창업 매칭의 “아이템이 정해졌나요?” 같은 것)은 v9처럼 한 화면에 하나씩 유지할게요.</li>
+    </ol>
+  </div></section>
+</main>
+
+<script>
+(() => {
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Reveal blocks once, slowly.
+  const ro = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("seen"); ro.unobserve(e.target); } }), { threshold: 0.2 });
+  document.querySelectorAll(".rv").forEach((el) => (reduce ? el.classList.add("seen") : ro.observe(el)));
+
+  // Light the list row nearest the middle of the screen.
+  const rows = [...document.querySelectorAll(".row")];
+  // Fade the bottom of cards that have another card stacked on top of them.
+  const cards = [...document.querySelectorAll(".card")];
+  function onScroll() {
+    const mid = innerHeight / 2;
+    let best = null, bestD = Infinity;
+    rows.forEach((r) => { const b = r.getBoundingClientRect(); const d = Math.abs(b.top + b.height / 2 - mid); if (d < bestD) { bestD = d; best = r; } });
+    rows.forEach((r) => r.classList.toggle("focus", r === best && bestD < innerHeight * 0.45));
+    cards.forEach((c, i) => {
+      const next = cards[i + 1];
+      c.classList.toggle("dim", !!next && next.getBoundingClientRect().top - c.getBoundingClientRect().top < 120);
+    });
+  }
+  addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+
+  // Calm wheel: ease toward the target instead of jumping (touch and keyboard stay native).
+  if (reduce) return;
+  let target = scrollY, current = scrollY, raf = 0;
+  const max = () => document.documentElement.scrollHeight - innerHeight;
+  addEventListener("wheel", (e) => {
+    if (e.ctrlKey) return;
+    e.preventDefault();
+    target = Math.max(0, Math.min(max(), target + e.deltaY * 0.7));
+    if (!raf) raf = requestAnimationFrame(tick);
+  }, { passive: false });
+  function tick() {
+    current += (target - current) * 0.075;
+    if (Math.abs(target - current) < 0.5) current = target;
+    scrollTo(0, current);
+    raf = current === target ? 0 : requestAnimationFrame(tick);
+  }
+  addEventListener("scroll", () => { if (!raf) { target = current = scrollY; } }, { passive: true });
+})();
+</script>
