@@ -1,3 +1,4 @@
+import { photoKeysOf } from "~/lib/cover.server";
 import type { Route } from "./+types/public-report";
 import { getPublicSpace } from "~/lib/spaces.server";
 import { listAnswers } from "~/lib/surveys.server";
@@ -18,7 +19,7 @@ export async function loader({ params, context }: Route.LoaderArgs) {
   const space = await getPublicSpace(db, params.slug);
   if (!space) throw new Response("Not found", { status: 404 });
   // getPublicSpace already enforced the public gate, so the cover URL may be exposed here.
-  const photoKeys = space.photo_keys ? (JSON.parse(space.photo_keys) as string[]) : [];
+  const photoKeys = photoKeysOf(space);
   const coverUrl = resolveCoverKey(photoKeys, space.cover_key) ? publicCoverUrl(space.slug) : null;
   const header = { name: space.name, neighborhood: space.neighborhood, slug: space.slug, coverUrl, feePct: Math.round(FEE_RATE * 100) };
   const demand = await loadSpaceDemand(db, space);
