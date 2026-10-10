@@ -1,0 +1,329 @@
+<title>쓸모 건물주 계정 시안</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Geist+Mono:wght@500&display=swap">
+<style>
+/* Layout: review board — role explainer, then owner screens as PC browser frames and phone frames. App palette is light-only; the board itself follows the viewer's theme. */
+:root {
+  --bg: #f1f0ec; --fg: #1d1d1b; --muted: #5f5d58; --rule: #d8d6d0; --note-bg: #ffffff; --tag: #8a6d00;
+  --a-ink: #1d1d1b; --a-paper: #ffffff; --a-soft: #fafaf7; --a-muted: #5f5d58; --a-line: #e8e6e1;
+  --a-yellow: #fff0a6; --a-yellow-deep: #f2d65c; --a-green: #d3f0bf; --a-green-deep: #8fcb6e;
+  --hl: rgba(255, 221, 87, 0.45);
+  --sans: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --mono: "Geist Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #171716; --fg: #ecebe7; --muted: #a3a19c; --rule: #2f2e2b; --note-bg: #20201e; --tag: #e8cf63; color-scheme: dark; } }
+:root[data-theme="dark"] { --bg: #171716; --fg: #ecebe7; --muted: #a3a19c; --rule: #2f2e2b; --note-bg: #20201e; --tag: #e8cf63; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); padding-inline: 16px; padding-block: 40px 96px; word-break: keep-all; overflow-wrap: break-word; }
+.board { max-width: 1240px; margin: 0 auto; }
+.kicker { font-family: var(--mono); font-size: 12px; color: var(--tag); letter-spacing: .06em; }
+.top h1 { font-size: 30px; line-height: 1.3; margin: 8px 0 12px; text-wrap: balance; }
+.top p { font-size: 16px; line-height: 1.7; color: var(--muted); margin: 0 0 8px; max-width: 70ch; }
+.roles { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-top: 18px; }
+.roles div { background: var(--note-bg); border: 1px solid var(--rule); border-radius: 10px; padding: 16px 18px; font-size: 15px; line-height: 1.6; }
+.roles b { display: block; font-size: 16px; margin-bottom: 4px; }
+.group-title { display: flex; align-items: baseline; gap: 12px; margin: 52px 0 18px; border-bottom: 1px solid var(--rule); padding-bottom: 10px; flex-wrap: wrap; }
+.group-title h2 { font-size: 18px; margin: 0; }
+.group-title span { font-size: 14px; color: var(--muted); }
+.screen { display: grid; gap: 12px; margin-bottom: 40px; min-width: 0; }
+.label { display: flex; gap: 8px; align-items: baseline; }
+.label .id { font-family: var(--mono); font-size: 12px; color: var(--tag); }
+.label .name { font-size: 15px; font-weight: 700; }
+.notes { margin: 0; padding: 12px 14px 12px 30px; background: var(--note-bg); border: 1px solid var(--rule); border-radius: 8px; font-size: 14px; line-height: 1.65; color: var(--muted); max-width: 900px; }
+.notes b { color: var(--fg); font-weight: 500; }
+.scroll { overflow-x: auto; border-radius: 10px; }
+.browser { min-width: 1080px; border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; background: var(--a-paper); }
+.url { font-family: var(--mono); font-size: 11px; color: var(--a-muted); background: #f4f4f1; padding: 8px 14px; border-bottom: 1px solid var(--a-line); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.phones { display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-start; }
+.ph { width: min(360px, 100%); display: grid; gap: 10px; }
+.phone { border: 9px solid #1b1b1b; border-radius: 30px; overflow: hidden; background: var(--a-paper); }
+
+/* app */
+.app, .app * { color: var(--a-ink); }
+.app { font-family: var(--sans); font-size: 16px; line-height: 1.618; }
+.app .m { color: var(--a-muted); }
+.app .nav { display: flex; justify-content: space-between; align-items: center; padding: 16px 40px; border-bottom: 1px solid var(--a-line); }
+.phone .app .nav { padding: 14px 18px; }
+.app .logo { font-weight: 700; font-size: 18px; }
+.app .logo i { font-style: normal; background: linear-gradient(transparent 11%, var(--hl) 11%, var(--hl) 89%, transparent 89%); }
+.app .nav nav { display: flex; gap: 24px; font-size: 15px; }
+.app .nav nav .on { font-weight: 700; }
+.app .page { padding: 40px 40px 48px; }
+.phone .app .page { padding: 26px 18px 30px; }
+.app .eyebrow { font-size: 15px; font-weight: 500; color: var(--a-muted); }
+.app h3 { font-size: 41.9px; line-height: 1.236; letter-spacing: -.02em; margin: 8px 0 0; font-weight: 700; text-wrap: balance; }
+.phone .app h3 { font-size: 25.9px; line-height: 1.382; }
+.app h4 { font-size: 25.9px; line-height: 1.382; margin: 0; font-weight: 700; }
+.app mark { background: linear-gradient(transparent 11%, var(--hl) 11%, var(--hl) 89%, transparent 89%); padding: 0; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.app .lead { font-size: 18px; color: var(--a-muted); margin: 12px 0 0; max-width: 36em; }
+.app .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--a-yellow-deep); background: var(--a-yellow); font: inherit; font-weight: 700; font-size: 16px; padding: 12px 22px; border-radius: 10px; text-decoration: none; cursor: pointer; }
+.app .btn.ghost { background: var(--a-paper); border-color: var(--a-line); }
+.app .btn.kakao { background: #fee500; border-color: #e6cf00; }
+.app .btn.block { display: flex; width: 100%; }
+.app .btn.sm { font-size: 15px; padding: 8px 14px; }
+.app .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 28px; }
+.app .card { border: 1px solid var(--a-line); border-radius: 16px; padding: 24px; background: var(--a-paper); }
+.app .card.ok { border-color: var(--a-green-deep); }
+.app .card .st { font-size: 15px; font-weight: 500; color: var(--a-muted); }
+.app .card .nm { font-size: 20px; font-weight: 700; margin-top: 4px; }
+.app .card .big { font-family: var(--mono); font-size: 34px; font-weight: 500; margin-top: 14px; }
+.app .card .big small { font-family: var(--sans); font-size: 15px; color: var(--a-muted); margin-left: 6px; }
+.app .card .row { display: flex; gap: 8px; margin-top: 18px; flex-wrap: wrap; }
+.app .add { border: 1px dashed var(--a-line); border-radius: 16px; display: grid; place-items: center; text-align: center; padding: 24px; color: var(--a-muted); font-size: 16px; }
+.app .add b { display: block; font-size: 20px; color: var(--a-ink); }
+.app .split { display: grid; grid-template-columns: 1.618fr 1fr; gap: 48px; align-items: start; margin-top: 28px; }
+.app .field { display: block; margin-bottom: 18px; }
+.app .field > span { display: block; font-size: 15px; font-weight: 500; margin-bottom: 6px; }
+.app .field small { display: block; font-size: 15px; color: var(--a-muted); margin-top: 4px; }
+.app .input { width: 100%; border: 1px solid var(--a-line); border-radius: 10px; padding: 11px 14px; font: inherit; font-size: 16px; background: var(--a-paper); }
+.app textarea.input { min-height: 96px; resize: vertical; }
+.app .two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.app .consent { display: flex; gap: 12px; border: 1px solid var(--a-line); border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; font-size: 16px; }
+.app .consent input { margin-top: 5px; width: 17px; height: 17px; accent-color: var(--a-ink); flex-shrink: 0; }
+.app .consent small { display: block; font-size: 15px; color: var(--a-muted); margin-top: 2px; line-height: 1.55; }
+.app .aside { background: var(--a-soft); border: 1px solid var(--a-line); border-radius: 16px; padding: 24px; }
+.app .aside ol { margin: 10px 0 0; padding-left: 20px; font-size: 16px; line-height: 1.8; }
+.app .file { border: 1px dashed var(--a-line); border-radius: 10px; padding: 14px; font-size: 15px; color: var(--a-muted); }
+.app .cand { display: grid; grid-template-columns: 56px 1fr 300px; gap: 24px; padding: 26px 0; border-top: 1px solid var(--a-line); align-items: start; }
+.app .cand:last-child { border-bottom: 1px solid var(--a-line); }
+.app .cand .no { font-family: var(--mono); font-size: 15px; color: var(--a-muted); padding-top: 4px; }
+.app .cand .ty { font-size: 22px; font-weight: 700; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.app .cand .sc { font-family: var(--mono); font-size: 18px; font-weight: 500; }
+.app .cand .sc small { font-family: var(--sans); font-size: 15px; color: var(--a-muted); font-weight: 400; margin-left: 4px; }
+.app .cand p { margin: 8px 0 0; font-size: 17px; }
+.app .cand .pm { margin-top: 10px; font-size: 16px; }
+.app .cand .meta { margin-top: 8px; font-size: 15px; color: var(--a-muted); }
+.app .star { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--a-line); border-radius: 999px; padding: 6px 14px; font-size: 15px; background: var(--a-paper); cursor: pointer; }
+.app .star.on { background: var(--a-yellow); border-color: var(--a-yellow-deep); font-weight: 700; }
+.app .memo { width: 100%; min-height: 92px; border: 1px solid var(--a-line); border-radius: 10px; padding: 10px 12px; font: inherit; font-size: 15px; background: var(--a-soft); resize: vertical; }
+.app .memo-h { font-size: 15px; font-weight: 500; margin: 12px 0 6px; }
+.app .filters { display: flex; gap: 8px; margin-top: 22px; flex-wrap: wrap; }
+.app .chip { border: 1px solid var(--a-line); border-radius: 999px; padding: 7px 16px; font-size: 15px; background: var(--a-paper); }
+.app .chip.on { background: var(--a-ink); color: var(--a-paper); border-color: var(--a-ink); }
+.app .chip.on * , .app .chip.on { color: var(--a-paper); }
+.app .notice { margin-top: 26px; font-size: 15px; color: var(--a-muted); border-top: 1px solid var(--a-line); padding-top: 14px; }
+.app .divider { display: flex; align-items: center; gap: 10px; margin: 18px 0; font-size: 15px; color: var(--a-muted); }
+.app .divider::before, .app .divider::after { content: ""; flex: 1; height: 1px; background: var(--a-line); }
+.phone .app .cand { grid-template-columns: 1fr; gap: 10px; }
+.phone .app .cand .no { display: none; }
+</style>
+
+<div class="board">
+  <section class="top">
+    <div class="kicker">SSULMO · 시안 v12 · 건물주 계정 · 2026-10-10</div>
+    <h1>건물주 계정 화면</h1>
+    <p>지금까지 “관리자”는 쓸모 운영자(본인) 한 명이었어요. 이번 시안은 그와 별개로 <b>건물주가 직접 가입해서</b> 공실을 등록하고, 후보를 보고, 메모를 남기는 화면이에요.</p>
+    <div class="roles">
+      <div><b>운영자 (쓸모 · 지금의 관리자)</b>모든 공실·신청 관리, AI 평가 확인, 건물주가 등록한 공실 확인 후 공개, 컨설팅 기록</div>
+      <div><b>건물주 (새 계정)</b>내 공실 등록, 의견 모으는 현황 보기, AI 후보 보기, 관심 표시와 메모. 남의 공실과 지원자 개인정보는 못 봐요</div>
+      <div><b>지원자 (계정 없음, 지금과 같음)</b>무료 신청, 결과는 메일 링크로</div>
+    </div>
+  </section>
+
+  <div class="group-title"><h2>가입 · 로그인</h2><span>비밀번호 없이 시작해요</span></div>
+  <div class="phones">
+    <div class="ph">
+      <div class="label"><span class="id">B1</span><span class="name">건물주로 시작하기</span></div>
+      <div class="phone"><div class="url">ssulmo.app/owner</div>
+        <div class="app">
+          <div class="nav"><span class="logo">쓸<i>모</i></span></div>
+          <div class="page">
+            <div class="eyebrow">건물주</div>
+            <h3>비어 있는 공간,<br><mark>동네에 물어볼게요</mark></h3>
+            <p class="lead" style="font-size:16px">공실을 등록하면 주민 의견을 모으고, AI가 평가한 임차 후보를 보여드려요. 등록은 무료예요.</p>
+            <div style="margin-top:24px;display:grid;gap:10px">
+              <span class="btn kakao block">카카오로 시작하기</span>
+            </div>
+            <div class="divider">또는</div>
+            <label class="field"><span>이메일</span><input class="input" id="b1-email" placeholder="owner@example.com"></label>
+            <span class="btn ghost block">로그인 링크 받기</span>
+            <p class="m" style="font-size:15px;margin:14px 0 0">처음이면 자동으로 가입돼요.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="ph">
+      <div class="label"><span class="id">B1-1</span><span class="name">처음 가입할 때 한 번</span></div>
+      <div class="phone"><div class="url">ssulmo.app/owner/welcome</div>
+        <div class="app">
+          <div class="nav"><span class="logo">쓸<i>모</i></span></div>
+          <div class="page">
+            <h3>몇 가지만 확인할게요</h3>
+            <label class="field" style="margin-top:20px"><span>이름</span><input class="input" id="b11-name" value="이건물"></label>
+            <label class="field"><span>연락처</span><input class="input" id="b11-tel" placeholder="010-0000-0000"><small>운영자가 상담할 때만 써요.</small></label>
+            <label class="consent"><input type="checkbox" checked><span>[필수] 이용약관 동의</span></label>
+            <label class="consent"><input type="checkbox" checked><span>[필수] 개인정보 수집·이용 동의<small>이름, 연락처, 이메일 · 계정 운영과 상담</small></span></label>
+            <span class="btn block" style="margin-top:8px">시작하기</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <ul class="notes" style="margin-top:14px">
+    <li>비밀번호를 만들지 않아요. <b>카카오 로그인</b>이나 <b>이메일로 받은 링크</b>를 누르면 로그인돼요. 건물주 연령대에는 이 방식이 가장 덜 막혀요.</li>
+    <li>카카오 로그인은 카카오 개발자 앱 등록이 필요해서 구현 때 준비물이 하나 늘어요. 먼저 이메일 링크만으로 시작할 수도 있어요.</li>
+  </ul>
+
+  <div class="group-title"><h2>내 공실</h2><span>PC 기준 · 휴대폰에서는 한 줄로 쌓여요</span></div>
+  <article class="screen">
+    <div class="label"><span class="id">B2</span><span class="name">내 공실 목록</span></div>
+    <div class="scroll"><div class="browser"><div class="url">ssulmo.app/owner/spaces</div>
+      <div class="app">
+        <div class="nav"><span class="logo">쓸<i>모</i></span><nav><span class="on">내 공실</span><span>후보</span><span>내 정보</span></nav></div>
+        <div class="page">
+          <div class="eyebrow">이건물 님</div>
+          <h3>내 공실 <mark>2곳</mark></h3>
+          <div class="grid3">
+            <div class="card ok">
+              <div class="st">후보 평가 완료</div>
+              <div class="nm">성수동 골목 1층</div>
+              <div class="m" style="font-size:15px">성동구 성수동</div>
+              <div class="big">5<small>명의 후보</small></div>
+              <div class="row"><span class="btn sm">후보 보기</span><span class="btn sm ghost">동네 의견</span></div>
+            </div>
+            <div class="card">
+              <div class="st">주민 의견 모으는 중</div>
+              <div class="nm">금호동 역세권 1층</div>
+              <div class="m" style="font-size:15px">성동구 금호동</div>
+              <div class="big">32<small>/ 50명 모이면 공개</small></div>
+              <div class="row"><span class="btn sm ghost">QR 받기</span><span class="btn sm ghost">수정</span></div>
+            </div>
+            <div class="add"><div><b>+ 공실 등록</b>주소와 위치 특징만 있으면 돼요</div></div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <ul class="notes">
+      <li>공실마다 지금 단계 하나만 크게 보여줘요: <b>운영자 확인 대기 → 주민 의견 모으는 중(N/50명) → 후보 평가 완료(N명)</b>.</li>
+      <li>건물주에게는 50명이 되기 전에도 <b>자기 공실의 응답 수</b>를 보여줘요. 공개 페이지에는 여전히 “집계 중”만 나가요.</li>
+    </ul>
+  </article>
+
+  <article class="screen">
+    <div class="label"><span class="id">B3</span><span class="name">공실 등록</span></div>
+    <div class="scroll"><div class="browser"><div class="url">ssulmo.app/owner/spaces/new</div>
+      <div class="app">
+        <div class="nav"><span class="logo">쓸<i>모</i></span><nav><span class="on">내 공실</span><span>후보</span><span>내 정보</span></nav></div>
+        <div class="page">
+          <div class="eyebrow">공실 등록</div>
+          <h3>어떤 공간인가요?</h3>
+          <div class="split">
+            <div>
+              <label class="field"><span>공간 이름</span><input class="input" id="b3-name" placeholder="예: 성수동 골목 1층 공실"></label>
+              <div class="two">
+                <label class="field"><span>구</span><input class="input" id="b3-gu" value="성동구"></label>
+                <label class="field"><span>동</span><input class="input" id="b3-dong" value="성수동"></label>
+              </div>
+              <label class="field"><span>위치 특징</span><textarea class="input" id="b3-loc" placeholder="예: 성수역 3번 출구 도보 4분, 카페 골목 초입"></textarea><small>AI 평가에 쓰여요. 임대료·보증금 같은 계약 조건은 적지 않아요.</small></label>
+              <div class="field"><span>사진 (선택)</span><div class="file">사진 올리기 · 최대 5장</div></div>
+              <label class="consent"><input type="checkbox" checked><span>[필수] 이 공간의 소유자(또는 위임받은 사람)예요<small>등록하면 쓸모가 가게 앞 QR 설문을 진행하는 데 동의하는 것으로 봐요.</small></span></label>
+              <span class="btn" style="margin-top:8px">등록하기</span>
+            </div>
+            <aside class="aside">
+              <h4 style="font-size:20px">등록하면 이렇게 진행돼요</h4>
+              <ol>
+                <li>운영자가 확인하고 공개해요 (보통 1~2일)</li>
+                <li>가게 앞에 붙일 QR을 받아요</li>
+                <li>주민 50명이 모이면 원하는 업종이 나와요</li>
+                <li>창업자를 모집하고 AI가 평가해요</li>
+                <li>상위 후보를 보고, 계약은 공인중개사와 진행해요</li>
+              </ol>
+            </aside>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <ul class="notes">
+      <li>건물주가 직접 등록하므로 <b>“소유자 확인” 체크가 곧 건물주 동의</b>예요. 대신 아무나 남의 건물을 올리지 못하게 <b>운영자 확인 후 공개</b>돼요.</li>
+      <li>지시서 규칙대로 임대료·보증금 칸은 없어요. <span class="kicker">TODO(legal)</span> 소유자 확인을 어디까지 해야 하는지(등기부 확인 등)는 법적 확인이 필요해요.</li>
+    </ul>
+  </article>
+
+  <div class="group-title"><h2>후보 보기 · 관심 · 메모</h2><span>지금의 건물주 링크 화면을 계정 안으로</span></div>
+  <article class="screen">
+    <div class="label"><span class="id">B4</span><span class="name">후보 보기 (PC)</span></div>
+    <div class="scroll"><div class="browser"><div class="url">ssulmo.app/owner/spaces/2/candidates</div>
+      <div class="app">
+        <div class="nav"><span class="logo">쓸<i>모</i></span><nav><span>내 공실</span><span class="on">후보</span><span>내 정보</span></nav></div>
+        <div class="page">
+          <div class="eyebrow">성수동 골목 1층 · 임차인 후보</div>
+          <h3>AI 평가 상위 <mark>후보 5명</mark></h3>
+          <p class="lead">동네 수요 1위 아이스크림·디저트 · 응답자 120명 중 100명이 이용 의향</p>
+          <div class="filters"><span class="chip on">전체 5</span><span class="chip">관심 2</span></div>
+          <div style="margin-top:20px">
+            <div class="cand">
+              <div class="no">01</div>
+              <div>
+                <div class="ty">젤라또 <span class="sc">88<small>점 · 참고용</small></span></div>
+                <p>1위 수요 업종이고, 오후·저녁 테이크아웃 중심 계획이 설문과 맞아요.</p>
+                <div class="pm"><b>강점</b> 수요 일치, 낮은 초기 비용 · <b>위험</b> 겨울 매출 감소</div>
+                <div class="meta">쓸모 트랙 · 예상 창업 비용 4,500만원</div>
+              </div>
+              <div>
+                <span class="star on">★ 관심</span>
+                <div class="memo-h">내 메모</div>
+                <textarea class="memo" id="b4-m1">인테리어 직접 한다고 함. 다음 주 공인중개사 통해 미팅 잡기.</textarea>
+              </div>
+            </div>
+            <div class="cand">
+              <div class="no">02</div>
+              <div>
+                <div class="ty">디저트 카페 <span class="sc">81<small>점 · 참고용</small></span></div>
+                <p>1·2위 수요를 함께 겨냥해요. 좌석 운영 계획이 구체적이에요.</p>
+                <div class="pm"><b>강점</b> 체류형 매출 · <b>위험</b> 인건비 부담</div>
+                <div class="meta">일반 신청 · 예상 창업 비용 7,000만원</div>
+              </div>
+              <div>
+                <span class="star">☆ 관심</span>
+                <div class="memo-h">내 메모</div>
+                <textarea class="memo" id="b4-m2" placeholder="이 후보에 대한 메모 (나만 보여요)"></textarea>
+              </div>
+            </div>
+          </div>
+          <p class="m" style="font-size:15px;margin-top:14px">후보 3~5는 아래로 이어져요.</p>
+          <div class="notice">AI가 작성한 평가예요. 이름과 연락처는 계약 협의 단계에서 공인중개사를 통해 안내돼요. 임대차 계약은 건물주님과 공인중개사가 직접 진행하고, 쓸모는 계약에 참여하거나 계약의 대가를 받지 않아요.</div>
+        </div>
+      </div>
+    </div></div>
+    <ul class="notes">
+      <li>후보 카드는 지금 건물주 링크 화면과 같아요: 업종, 점수(참고용), 요약, 강점·위험, 트랙. <b>이름·이메일·사업계획서 원문은 여전히 없어요.</b></li>
+      <li>새로 생기는 것: <b>★ 관심 표시</b>(목록 위 “관심 2”로 모아 보기)와 <b>후보별 메모</b>. 메모는 저절로 저장돼요.</li>
+    </ul>
+  </article>
+
+  <div class="phones">
+    <div class="ph">
+      <div class="label"><span class="id">B4·m</span><span class="name">후보 보기 (휴대폰)</span></div>
+      <div class="phone"><div class="url">ssulmo.app/owner/spaces/2/candidates</div>
+        <div class="app">
+          <div class="nav"><span class="logo">쓸<i>모</i></span><span style="font-size:20px">☰</span></div>
+          <div class="page">
+            <div class="eyebrow">성수동 골목 1층</div>
+            <h3>후보 <mark>5명</mark></h3>
+            <div class="filters"><span class="chip on">전체 5</span><span class="chip">관심 2</span></div>
+            <div class="cand" style="margin-top:14px">
+              <div>
+                <div class="ty">젤라또 <span class="sc">88<small>점 · 참고용</small></span></div>
+                <p>1위 수요 업종이고, 오후·저녁 테이크아웃 중심 계획이 설문과 맞아요.</p>
+                <div class="meta">쓸모 트랙 · 4,500만원</div>
+              </div>
+              <div>
+                <span class="star on">★ 관심</span>
+                <div class="memo-h">내 메모</div>
+                <textarea class="memo" id="b4m-m1">다음 주 미팅 잡기</textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="group-title"><h2>정해 주실 것</h2><span>답에 따라 구현 범위가 달라져요</span></div>
+  <ul class="notes" style="max-width:none">
+    <li><b>1. 메모를 운영자도 볼까요?</b> 추천: 보이게 해요. 운영자가 건물주와 상의할 때 맥락이 돼요. 건물주에게는 “운영자와 공유돼요”라고 표시해요.</li>
+    <li><b>2. 로그인 방식:</b> 추천: 이메일 링크로 먼저 시작하고, 카카오 로그인은 실제 건물주가 생기면 붙여요(카카오 앱 등록 필요).</li>
+    <li><b>3. 지금의 건물주 링크(/o/…)는?</b> 추천: 계정이 없는 건물주에게 보여줄 때를 위해 남겨두고, 계정이 생기면 그 공실은 계정 화면으로 안내해요.</li>
+  </ul>
+</div>
