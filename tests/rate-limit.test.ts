@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createTestDb } from "./helpers/d1";
-import { adminLoginBlocked, clientIp, hit, recordAdminLoginFailure } from "~/lib/rate-limit.server";
+import { clearAdminLoginAttempts, clientIp, hit, tryAdminLoginAttempt } from "~/lib/rate-limit.server";
 
 describe("hit", () => {
   it("allows up to max inside the window, then blocks without extending the lockout", async () => {
@@ -27,16 +27,24 @@ describe("hit", () => {
 });
 
 describe("admin login limiter", () => {
-  it("blocks the 6th attempt inside 15 minutes per IP only", async () => {
+  it("allows 5 attempts per IP in 15 minutes, atomically, and the 6th is refused", async () => {
     const db = createTestDb();
     const t = 5_000_000;
-    for (let i = 0; i < 5; i++) {
-      expect(await adminLoginBlocked(db, "1.1.1.1", t + i)).toBe(false);
-      await recordAdminLoginFailure(db, "1.1.1.1", t + i);
-    }
-    expect(await adminLoginBlocked(db, "1.1.1.1", t + 10)).toBe(true);
-    expect(await adminLoginBlocked(db, "2.2.2.2", t + 10)).toBe(false);
-    expect(await adminLoginBlocked(db, "1.1.1.1", t + 15 * 60_000 + 10)).toBe(false);
+    for (let i = 0; i < 5; i++) expect(await tryAdminLoginAttempt(db, "1.1.1.1", t + i)).toBe(true);
+    expect(await tryAdminLoginAttempt(db, "1.1.1.1", t + 10)).toBe(false);
+    expect(await tryAdminLoginAttempt(db, "2.2.2.2", t + 10)).toBe(true);
+    expect(await tryAdminLoginAttempt(db, "1.1.1.1", t + 15 * 60_000 + 10)).toBe(true);
+  });
+  it("a burst of parallel attempts cannot exceed the limit", async () => {
+    const db = createTestDb();
+    const results = await Promise.all(Array.from({ length: 12 }, () => tryAdminLoginAttempt(db, "3.3.3.3", 9_000_000)));
+    expect(results.filter(Boolean)).toHaveLength(5);
+  });
+  it("a successful login clears the counter so only failures count", async () => {
+    const db = createTestDb();
+    for (let i = 0; i < 4; i++) await tryAdminLoginAttempt(db, "4.4.4.4", 1000 + i);
+    await clearAdminLoginAttempts(db, "4.4.4.4");
+    for (let i = 0; i < 5; i++) expect(await tryAdminLoginAttempt(db, "4.4.4.4", 2000 + i)).toBe(true);
   });
 });
 

@@ -1,8 +1,8 @@
 import { data, Form, redirect } from "react-router";
 import type { Route } from "./+types/owner-space-new";
 import { ownerProfileComplete, requireOwner } from "~/lib/owner-auth.server";
-import { createOwnerSpace, parseOwnerSpaceForm } from "~/lib/owner-spaces.server";
-import { checkPhotos, storeUpload } from "~/lib/uploads.server";
+import { countPendingSpaces, createOwnerSpace, MAX_PENDING_SPACES, parseOwnerSpaceForm } from "~/lib/owner-spaces.server";
+import { checkPhotos, photoContentType, storeUpload } from "~/lib/uploads.server";
 import { Consent, ErrorNote, SubmitButton, TextInput, Title } from "~/components/ui";
 import { OwnerPage, ownerMeta } from "~/components/owner";
 
@@ -18,6 +18,9 @@ export async function action({ request, context }: Route.ActionArgs) {
   const env = context.cloudflare.env;
   const owner = await requireOwner(request, env);
   if (!ownerProfileComplete(owner)) throw redirect("/owner/welcome");
+  if ((await countPendingSpaces(env.DB, owner.id)) >= MAX_PENDING_SPACES) {
+    return data({ error: `확인 대기 중인 공실은 ${MAX_PENDING_SPACES}곳까지 등록할 수 있어요. 운영자가 확인한 뒤 더 등록해 주세요.` }, { status: 400 });
+  }
   const form = await request.formData();
 
   const parsed = parseOwnerSpaceForm(form);
@@ -27,7 +30,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   if (!photos.ok) return data({ error: photos.error }, { status: 400 });
 
   const photoKeys: string[] = [];
-  for (const file of photos.value) photoKeys.push(await storeUpload(env.UPLOADS, "owner-photos", file));
+  for (const file of photos.value) photoKeys.push(await storeUpload(env.UPLOADS, "owner-photos", file, photoContentType(file)));
   await createOwnerSpace(env.DB, owner.id, { ...parsed.value, photoKeys });
   return redirect("/owner/spaces?registered=1");
 }

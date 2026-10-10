@@ -20,16 +20,24 @@ export const ADMIN_LOGIN_MAX_FAILURES = 5;
 export const ADMIN_LOGIN_WINDOW_MS = 15 * 60_000;
 const adminKey = (ip: string) => `admin-login:${ip}`;
 
-export async function adminLoginBlocked(db: D1Database, ip: string, now = Date.now()): Promise<boolean> {
-  const row = await db
-    .prepare("SELECT COUNT(*) AS n FROM auth_attempts WHERE key = ? AND created_at > ?")
-    .bind(adminKey(ip), now - ADMIN_LOGIN_WINDOW_MS)
-    .first<{ n: number }>();
-  return (row?.n ?? 0) >= ADMIN_LOGIN_MAX_FAILURES;
+/**
+ * Records an attempt and says whether it may proceed, in ONE statement so a burst of parallel
+ * requests cannot all pass a check before any is counted. Call before verifying the password;
+ * a successful login then clears the counter, so only failures accumulate.
+ */
+export async function tryAdminLoginAttempt(db: D1Database, ip: string, now = Date.now()): Promise<boolean> {
+  const res = await db
+    .prepare(
+      `INSERT INTO auth_attempts (key, created_at) SELECT ?, ?
+       WHERE (SELECT COUNT(*) FROM auth_attempts WHERE key = ? AND created_at > ?) < ?`,
+    )
+    .bind(adminKey(ip), now, adminKey(ip), now - ADMIN_LOGIN_WINDOW_MS, ADMIN_LOGIN_MAX_FAILURES)
+    .run();
+  return res.meta.changes === 1;
 }
 
-export async function recordAdminLoginFailure(db: D1Database, ip: string, now = Date.now()): Promise<void> {
-  await db.prepare("INSERT INTO auth_attempts (key, created_at) VALUES (?, ?)").bind(adminKey(ip), now).run();
+export async function clearAdminLoginAttempts(db: D1Database, ip: string): Promise<void> {
+  await db.prepare("DELETE FROM auth_attempts WHERE key = ?").bind(adminKey(ip)).run();
 }
 
 /** Cloudflare sets CF-Connecting-IP; without it all callers share one bucket (stricter, never looser). */

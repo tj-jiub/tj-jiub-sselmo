@@ -1,6 +1,6 @@
 // tests/uploads.test.ts
 import { describe, expect, it } from "vitest";
-import { checkPhotos, checkUpload, MAX_UPLOAD_BYTES } from "~/lib/uploads.server";
+import { photoContentType, checkPhotos, checkUpload, MAX_UPLOAD_BYTES } from "~/lib/uploads.server";
 
 const file = (name: string, size: number) => new File([new Uint8Array(size)], name);
 
@@ -33,5 +33,12 @@ describe("checkPhotos", () => {
     expect(checkPhotos([img("plan.pdf")]).ok).toBe(false);
     expect(checkPhotos([img("noext")]).ok).toBe(false);
     expect(checkPhotos([img("big.jpg", MAX_UPLOAD_BYTES + 1)]).ok).toBe(false);
+  });
+});
+
+describe("photoContentType", () => {
+  it("ignores the client-supplied type", () => {
+    expect(photoContentType(new File([new Uint8Array(1)], "x.png", { type: "text/html" }))).toBe("image/png");
+    expect(photoContentType(new File([new Uint8Array(1)], "x.JPG", { type: "text/html" }))).toBe("image/jpeg");
   });
 });

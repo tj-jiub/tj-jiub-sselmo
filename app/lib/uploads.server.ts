@@ -16,10 +16,10 @@ export function checkUpload(value: FormDataEntryValue | null): ParseResult<File 
 
 // Keys are random so a leaked key reveals nothing; files are only ever served
 // through the admin-only /admin/files route.
-export async function storeUpload(bucket: R2Bucket, prefix: string, file: File): Promise<string> {
+export async function storeUpload(bucket: R2Bucket, prefix: string, file: File, contentType?: string): Promise<string> {
   const key = `${prefix}/${crypto.randomUUID()}.${extensionOf(file.name)}`;
   await bucket.put(key, await file.arrayBuffer(), {
-    httpMetadata: { contentType: file.type || "application/octet-stream" },
+    httpMetadata: { contentType: contentType ?? (file.type || "application/octet-stream") },
   });
   return key;
 }
@@ -37,3 +37,7 @@ export function checkPhotos(values: FormDataEntryValue[]): ParseResult<File[]> {
   }
   return { ok: true, value: files };
 }
+
+const PHOTO_TYPES: Record<string, string> = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp" };
+/** Photos get their content type from the (validated) extension, never from the client-supplied header. */
+export const photoContentType = (file: File): string => PHOTO_TYPES[extensionOf(file.name)] ?? "application/octet-stream";

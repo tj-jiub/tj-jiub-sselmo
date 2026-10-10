@@ -4,6 +4,14 @@ import type { Space } from "./spaces.server.ts";
 import { slugTaken } from "./spaces.server.ts";
 import { toHex } from "./hex.ts";
 
+/** Stops one sign-up from flooding the operator queue and the photo bucket. */
+export const MAX_PENDING_SPACES = 5;
+
+export async function countPendingSpaces(db: D1Database, ownerId: number): Promise<number> {
+  const row = await db.prepare("SELECT COUNT(*) AS n FROM spaces WHERE owner_id = ? AND status = 'pending'").bind(ownerId).first<{ n: number }>();
+  return row?.n ?? 0;
+}
+
 export type OwnerSpaceInput = {
   name: string;
   district: string;

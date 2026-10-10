@@ -12,6 +12,7 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
       "Content-Type": object.httpMetadata?.contentType ?? "application/octet-stream",
       "Content-Disposition": `attachment; filename="${key!.split("/").pop()}"`,
       "Cache-Control": "private, no-store",
+      "X-Content-Type-Options": "nosniff",
     },
   });
 }

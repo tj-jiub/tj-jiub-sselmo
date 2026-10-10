@@ -3,7 +3,7 @@ import { needsNoindex } from "../app/lib/robots.ts";
 
 describe("needsNoindex", () => {
   it("covers /admin and /owner trees", () => {
-    for (const p of ["/admin", "/admin/", "/admin/login", "/admin/spaces/3", "/owner", "/owner/verify", "/owner/spaces/1/candidates"]) {
+    for (const p of ["/admin", "/admin/", "/admin/login", "/admin/spaces/3", "/owner", "/owner.data", "/admin.data", "/owner/spaces.data", "/admin/spaces/3.data", "/owner/verify", "/owner/spaces/1/candidates"]) {
       expect(needsNoindex(p), p).toBe(true);
     }
   });

@@ -4,7 +4,7 @@ import { upsertOwner } from "~/lib/owner-auth.server";
 import { createSpace, getPublicSpace, listPublicSpaces } from "~/lib/spaces.server";
 import { loadPublicTallies } from "~/lib/matching.server";
 import {
-  approveSpace, createOwnerSpace, getOwnedSpace, getSpaceOwner, listOwnerSpaces, listPendingSpaces, parseOwnerSpaceForm,
+  approveSpace, countPendingSpaces, createOwnerSpace, MAX_PENDING_SPACES, getOwnedSpace, getSpaceOwner, listOwnerSpaces, listPendingSpaces, parseOwnerSpaceForm,
   rejectSpace, updatePendingSpace,
 } from "~/lib/owner-spaces.server";
 
@@ -158,5 +158,21 @@ describe("admin helpers", () => {
     expect(pending[0]).toMatchObject({ id, ownerName: "이건물", ownerEmail: "a@x.kr", ownerPhone: "010-1111-2222" });
     expect(await getSpaceOwner(db, id)).toEqual({ id: a.id, name: "이건물", email: "a@x.kr", phone: "010-1111-2222" });
     expect(await getSpaceOwner(db, admin)).toBeNull();
+  });
+});
+
+describe("pending cap", () => {
+  it("counts only this owner's pending spaces", async () => {
+    const db = createTestDb();
+    const a = await upsertOwner(db, "a@x.kr", 1);
+    const b = await upsertOwner(db, "b@x.kr", 1);
+    const mk = (o: number) => createOwnerSpace(db, o, { name: "X", district: "성동구", neighborhood: "성동구 금호동", locationNotes: null, photoKeys: [] }, 5);
+    const first = await mk(a.id);
+    await mk(a.id);
+    await mk(b.id);
+    expect(MAX_PENDING_SPACES).toBe(5);
+    expect(await countPendingSpaces(db, a.id)).toBe(2);
+    await approveSpace(db, first);
+    expect(await countPendingSpaces(db, a.id)).toBe(1);
   });
 });
