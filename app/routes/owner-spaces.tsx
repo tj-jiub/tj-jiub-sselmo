@@ -6,6 +6,10 @@ import { stageView } from "~/lib/owner-stage";
 import { Card, btnSmall, btnSmallGhost, Hl, Title } from "~/components/ui";
 import { Notice, OwnerPage, ownerMeta } from "~/components/owner";
 import { QrDownload } from "~/components/QrDownload";
+import { NumberTicker, ProgressBar } from "~/components/NumberTicker";
+import { SpaceAvatar } from "~/components/SpaceAvatar";
+import { ownerCoverUrl } from "~/lib/cover";
+import { PUBLIC_THRESHOLD } from "~/lib/report";
 
 export const meta = ownerMeta("내 공실");
 
@@ -27,6 +31,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       responseCount: c.responseCount,
       candidateCount: c.candidateCount,
       rejectReason: c.rejectReason,
+      hasCover: c.hasCover,
       slug: c.stage === "collecting" || c.stage === "evaluated" ? c.slug : null,
     })),
   };
@@ -49,15 +54,27 @@ export default function OwnerSpaces({ loaderData }: Route.ComponentProps) {
             <li key={s.id}>
               <Card top={s.stage === "evaluated"} className="h-full">
                 <div data-testid="space-card" className="flex h-full flex-col">
-                  <p data-testid="space-stage" className="text-[15px] font-medium text-muted">
-                    {v.label}
-                  </p>
-                  <h2 className="mt-1 text-xl font-bold">{s.name}</h2>
-                  <p className="text-[15px] text-muted">{s.neighborhood}</p>
+                  <div className="flex items-center gap-3.5">
+                    <SpaceAvatar src={s.hasCover ? ownerCoverUrl(s.id) : null} name={s.name} neighborhood={s.neighborhood} size={88} />
+                    <div className="min-w-0">
+                      <p data-testid="space-stage" className="text-[15px] font-medium text-muted">
+                        {v.label}
+                      </p>
+                      <h2 className="mt-1 text-xl font-bold">{s.name}</h2>
+                      <p className="text-[15px] text-muted">{s.neighborhood}</p>
+                    </div>
+                  </div>
                   {v.big && (
-                    <p className="mt-3.5 text-[15px] text-muted">
-                      <span className="num text-[34px] font-medium leading-none text-ink">{v.big.value}</span> {v.big.unit}
-                    </p>
+                    <div className="mt-3.5 text-ink">
+                      {s.stage === "collecting" && s.responseCount < PUBLIC_THRESHOLD ? (
+                        <>
+                          <NumberTicker value={s.responseCount} unit={`/ ${PUBLIC_THRESHOLD}명`} className="text-[40px] font-medium" />
+                          <ProgressBar value={s.responseCount} max={PUBLIC_THRESHOLD} label="주민 의견 모집 진행" className="mt-2.5" />
+                        </>
+                      ) : (
+                        <NumberTicker value={Number(v.big.value)} unit={v.big.unit} className="text-[40px] font-medium" />
+                      )}
+                    </div>
                   )}
                   {v.note && <p className="mt-2 text-[15px] text-muted">{v.note}</p>}
                   <div className="mt-4 flex flex-wrap gap-2">
@@ -69,6 +86,11 @@ export default function OwnerSpaces({ loaderData }: Route.ComponentProps) {
                     {v.isLive && s.slug && (
                       <Link to={`/r/${s.slug}`} className={btnSmallGhost}>
                         동네 의견
+                      </Link>
+                    )}
+                    {(s.stage === "pending" || s.stage === "collecting" || s.stage === "evaluated") && (
+                      <Link to={`/owner/spaces/${s.id}/photos`} className={btnSmallGhost}>
+                        사진 바꾸기
                       </Link>
                     )}
                     {v.canEdit && (

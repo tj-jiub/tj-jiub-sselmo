@@ -209,7 +209,7 @@ html:not(.mo) .cp-bar i { width: var(--w); }
 .cp-stats > .cp-wrap { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--color-line); }
 .cp-stats .cell { padding: 28px 24px 0 0; }
 .cp-stats b { display: block; font-size: clamp(28px, 3.6vw, 41.9px); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
-.cp-stats span { font-size: 15px; color: var(--color-muted); }
+.cp-stats .cell > span { font-size: 15px; color: var(--color-muted); }
 .cp-cta { padding-block: 120px 160px; text-align: center; }
 .cp-cta .cp-p { margin-top: 14px; }
 .cp-cta h2 { margin-top: 12px; }
@@ -246,4 +246,21 @@ html.mo .cp-panel.on .in:nth-child(4) { transition-delay: 540ms; }
   html.mo .cp-say .w { color: var(--color-ink); transition: none; }
   .cp-row { opacity: 1; transition: none; }
   .cp-bar i { width: var(--w); transition: none; }
+}
+
+/* Number ticker: fixed-width digit slots that roll once; real value lives in the .sr span. */
+.tk { display: inline-flex; align-items: baseline; font-family: var(--font-mono); font-variant-numeric: tabular-nums; line-height: 1; }
+.tk .tk-digits { display: inline-flex; align-items: baseline; }
+.tk .slot { display: inline-block; height: 1em; overflow: hidden; width: 0.62em; text-align: center; }
+.tk .reel { display: flex; flex-direction: column; }
+.tk .reel span { height: 1em; line-height: 1; }
+.tk[data-phase="roll"] .reel { transition: transform 1400ms cubic-bezier(0.22, 0.61, 0.36, 1); }
+.tk .sep { display: inline-block; width: 0.3em; text-align: center; }
+.tk .unit { font-family: var(--font-sans); font-size: 0.42em; margin-left: 0.18em; font-weight: 500; }
+.tk .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.prog { height: 6px; background: var(--color-line); border-radius: 3px; overflow: hidden; }
+.prog i { display: block; height: 100%; background: var(--color-green-deep); }
+.prog[data-phase="roll"] i { transition: width 1400ms cubic-bezier(0.22, 0.61, 0.36, 1); }
+@media (prefers-reduced-motion: reduce) {
+  .tk .reel, .prog i { transition: none !important; }
 }

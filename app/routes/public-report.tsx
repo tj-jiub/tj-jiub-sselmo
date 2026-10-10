@@ -6,6 +6,9 @@ import { loadSpaceDemand } from "~/lib/revenue.server";
 import { formatManwonRange } from "~/lib/money";
 import { estimateBasis, recruitHeadline } from "~/lib/screen-copy";
 import { FEE_RATE } from "~/lib/consulting";
+import { publicCoverUrl, resolveCoverKey } from "~/lib/cover";
+import { NumberTicker } from "~/components/NumberTicker";
+import { SpaceAvatar } from "~/components/SpaceAvatar";
 import { ContinuousPage, Cta, FocusRow, Hero, Say, SplitList, StackCard, StackSection, Stats } from "~/components/motion";
 
 export const meta: Route.MetaFunction = ({ data }) => [{ title: data ? `${data.name} 창업자 모집 — 쓸모` : "쓸모" }];
@@ -14,7 +17,10 @@ export async function loader({ params, context }: Route.LoaderArgs) {
   const db = context.cloudflare.env.DB;
   const space = await getPublicSpace(db, params.slug);
   if (!space) throw new Response("Not found", { status: 404 });
-  const header = { name: space.name, neighborhood: space.neighborhood, slug: space.slug, feePct: Math.round(FEE_RATE * 100) };
+  // getPublicSpace already enforced the public gate, so the cover URL may be exposed here.
+  const photoKeys = space.photo_keys ? (JSON.parse(space.photo_keys) as string[]) : [];
+  const coverUrl = resolveCoverKey(photoKeys, space.cover_key) ? publicCoverUrl(space.slug) : null;
+  const header = { name: space.name, neighborhood: space.neighborhood, slug: space.slug, coverUrl, feePct: Math.round(FEE_RATE * 100) };
   const demand = await loadSpaceDemand(db, space);
   // Below the threshold, send nothing but the header: not even the count.
   if (!demand.ready || !demand.topType) return { ...header, ready: false as const };
@@ -39,11 +45,12 @@ export async function loader({ params, context }: Route.LoaderArgs) {
 
 export default function PublicReport({ loaderData }: Route.ComponentProps) {
   const d = loaderData;
+  const avatar = <SpaceAvatar src={d.coverUrl} name={d.name} neighborhood={d.neighborhood} size={40} />;
 
   if (!d.ready) {
     return (
       <ContinuousPage nav="minimal" smooth={false}>
-        <Hero label={`${d.neighborhood} · 창업자 모집`} title={d.name} lead="집계 중이에요. 주민 응답이 충분히 모이면 이 자리에 필요한 가게를 보여드려요." />
+        <Hero avatar={avatar} label={`${d.neighborhood} · 창업자 모집`} title={d.name} lead="집계 중이에요. 주민 응답이 충분히 모이면 이 자리에 필요한 가게를 보여드려요." />
       </ContinuousPage>
     );
   }
@@ -51,6 +58,7 @@ export default function PublicReport({ loaderData }: Route.ComponentProps) {
   return (
     <ContinuousPage nav="minimal">
       <Hero
+        avatar={avatar}
         label={`${d.neighborhood} · 창업자 모집`}
         title={
           <>
@@ -118,9 +126,9 @@ export default function PublicReport({ loaderData }: Route.ComponentProps) {
 
       <Stats
         items={[
-          { value: `${d.total}명`, label: "응답한 주민" },
-          { value: `${d.lines.length}개`, label: "응답에 나온 업종" },
-          { value: `${d.lines[0].count}명`, label: `${d.lines[0].type} 이용 의향` },
+          { value: <NumberTicker value={d.total} unit="명" />, label: "응답한 주민" },
+          { value: <NumberTicker value={d.lines.length} unit="개" />, label: "응답에 나온 업종" },
+          { value: <NumberTicker value={d.lines[0].count} unit="명" />, label: `${d.lines[0].type} 이용 의향` },
         ]}
       />
 

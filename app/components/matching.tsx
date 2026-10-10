@@ -11,6 +11,8 @@ import {
 } from "~/lib/matching";
 import { ContinuousPage, FocusRow, FocusSteps, Hero, SplitList, StepPanel } from "~/components/motion";
 import { Hl } from "~/components/ui";
+import { SpaceAvatar } from "~/components/SpaceAvatar";
+import { publicCoverUrl } from "~/lib/cover";
 
 const STEP_LABELS = ["1 · 아이템", "2 · 고르기", "3 · 추천 공실"];
 
@@ -199,7 +201,27 @@ function Back({ to }: { to: string }) {
   );
 }
 
-export function TypeResults({ type, ranked, pending }: { type: string; ranked: TypeMatch[]; pending: PendingSpace[] }) {
+/** Neighborhood line with the space avatar; the cover URL is used only for slugs the server marked as public with a cover. */
+function SpaceLine({ slug, name, neighborhood, coverSlugs }: { slug: string; name: string; neighborhood: string; coverSlugs: string[] }) {
+  return (
+    <div className="mt-3 flex items-center gap-3">
+      <SpaceAvatar src={coverSlugs.includes(slug) ? publicCoverUrl(slug) : null} name={name} neighborhood={neighborhood} size={56} />
+      <p className="sub !mt-0">{neighborhood}</p>
+    </div>
+  );
+}
+
+export function TypeResults({
+  type,
+  ranked,
+  pending,
+  coverSlugs,
+}: {
+  type: string;
+  ranked: TypeMatch[];
+  pending: PendingSpace[];
+  coverSlugs: string[];
+}) {
   return (
     <ContinuousPage>
       <Hero
@@ -225,7 +247,7 @@ export function TypeResults({ type, ranked, pending }: { type: string; ranked: T
               }
               pct={m.total > 0 ? Math.round((m.count / m.total) * 100) : 0}
             >
-              <p className="sub">{m.neighborhood}</p>
+              <SpaceLine slug={m.slug} name={m.name} neighborhood={m.neighborhood} coverSlugs={coverSlugs} />
               <RowActions slug={m.slug} type={type} />
             </FocusRow>
           ))}
@@ -242,10 +264,12 @@ export function DistrictResults({
   district,
   ranked,
   pending,
+  coverSlugs,
 }: {
   district: string;
   ranked: DistrictMatch[];
   pending: PendingSpace[];
+  coverSlugs: string[];
 }) {
   const scope = district === ANY_DISTRICT ? "전체 지역" : district;
   const lead = ranked[0] ? headlineWord(ranked[0].top.type) : null;
@@ -277,7 +301,7 @@ export function DistrictResults({
               }
               pct={m.total > 0 ? Math.round((m.top.count / m.total) * 100) : 0}
             >
-              <p className="sub">{m.neighborhood}</p>
+              <SpaceLine slug={m.slug} name={m.name} neighborhood={m.neighborhood} coverSlugs={coverSlugs} />
               {m.runners.length > 0 && (
                 <p className="sub">{m.runners.map((r, j) => `${j + 2}위 ${r.type} ${r.count}명`).join(" · ")}</p>
               )}

@@ -179,11 +179,20 @@ export function Label({ n, children, className = "" }: { n?: string; children: R
 }
 
 /** Full-height hero whose bottom edge dissolves into the next block. */
-export function Hero({ label, title, lead, meta }: { label: string; title: ReactNode; lead?: ReactNode; meta?: string[] }) {
+export function Hero({ label, title, lead, meta, avatar }: { label: string; title: ReactNode; lead?: ReactNode; meta?: string[]; avatar?: ReactNode }) {
   return (
     <section className="cp-hero">
       <div className="cp-wrap">
-        <Reveal className="cp-label">{label}</Reveal>
+        <Reveal className="cp-label">
+          {avatar ? (
+            <span className="inline-flex items-center gap-3">
+              {avatar}
+              {label}
+            </span>
+          ) : (
+            label
+          )}
+        </Reveal>
         <Reveal as="h1" delay={1} style={{ marginTop: 16 }}>
           {title}
         </Reveal>
@@ -315,7 +324,7 @@ export function NumberedList({ items }: { items: ReactNode[] }) {
   );
 }
 
-export function Stats({ items }: { items: Array<{ value: string; label: string }> }) {
+export function Stats({ items }: { items: Array<{ value: ReactNode; label: string }> }) {
   return (
     <section className="cp-stats">
       <div className="cp-wrap">

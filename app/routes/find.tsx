@@ -1,5 +1,5 @@
 import type { Route } from "./+types/find";
-import { loadPublicTallies } from "~/lib/matching.server";
+import { loadPublicCoverSlugs, loadPublicTallies } from "~/lib/matching.server";
 import { listDistricts, parseFindParams, recommendByDistrict, recommendByType } from "~/lib/matching";
 import { DistrictResults, DistrictStep, StartStep, TypeResults, TypeStep } from "~/components/matching";
 
@@ -16,7 +16,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       return { step: "pick-type" as const };
     case "type-results": {
       const tallies = await loadPublicTallies(context.cloudflare.env.DB);
-      return { step: "type-results" as const, type: state.type, ...recommendByType(tallies, state.type) };
+      const coverSlugs = await loadPublicCoverSlugs(context.cloudflare.env.DB);
+      return { step: "type-results" as const, type: state.type, coverSlugs, ...recommendByType(tallies, state.type) };
     }
     case "pick-district": {
       const tallies = await loadPublicTallies(context.cloudflare.env.DB);
@@ -24,7 +25,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     }
     case "district-results": {
       const tallies = await loadPublicTallies(context.cloudflare.env.DB);
-      return { step: "district-results" as const, district: state.district, ...recommendByDistrict(tallies, state.district) };
+      const coverSlugs = await loadPublicCoverSlugs(context.cloudflare.env.DB);
+      return { step: "district-results" as const, district: state.district, coverSlugs, ...recommendByDistrict(tallies, state.district) };
     }
   }
 }
@@ -35,8 +37,8 @@ export default function Find({ loaderData: d }: Route.ComponentProps) {
       {d.step === "start" && <StartStep />}
       {d.step === "pick-type" && <TypeStep />}
       {d.step === "pick-district" && <DistrictStep districts={d.districts} />}
-      {d.step === "type-results" && <TypeResults type={d.type} ranked={d.ranked} pending={d.pending} />}
-      {d.step === "district-results" && <DistrictResults district={d.district} ranked={d.ranked} pending={d.pending} />}
+      {d.step === "type-results" && <TypeResults type={d.type} ranked={d.ranked} pending={d.pending} coverSlugs={d.coverSlugs} />}
+      {d.step === "district-results" && <DistrictResults district={d.district} ranked={d.ranked} pending={d.pending} coverSlugs={d.coverSlugs} />}
     </>
   );
 }
