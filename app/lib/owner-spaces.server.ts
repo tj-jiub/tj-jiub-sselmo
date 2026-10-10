@@ -3,6 +3,8 @@ import type { ParseResult } from "./result.ts";
 import type { Space } from "./spaces.server.ts";
 import { slugTaken } from "./spaces.server.ts";
 import { toHex } from "./hex.ts";
+import { MAX_PHOTOS } from "./uploads.server.ts";
+import { resolveCoverKey } from "./cover.ts";
 
 /** Stops one sign-up from flooding the operator queue and the photo bucket. */
 export const MAX_PENDING_SPACES = 5;
@@ -51,10 +53,10 @@ export async function createOwnerSpace(db: D1Database, ownerId: number, input: O
     if (await slugTaken(db, slug)) continue;
     const res = await db
       .prepare(
-        `INSERT INTO spaces (name, district, neighborhood, slug, owner_consent, location_notes, owner_id, status, photo_keys, created_at)
-         VALUES (?, ?, ?, ?, 1, ?, ?, 'pending', ?, ?)`,
+        `INSERT INTO spaces (name, district, neighborhood, slug, owner_consent, location_notes, owner_id, status, photo_keys, cover_key, created_at)
+         VALUES (?, ?, ?, ?, 1, ?, ?, 'pending', ?, ?, ?)`,
       )
-      .bind(input.name, input.district, input.neighborhood, slug, input.locationNotes, ownerId, input.photoKeys.length ? JSON.stringify(input.photoKeys) : null, now)
+      .bind(input.name, input.district, input.neighborhood, slug, input.locationNotes, ownerId, input.photoKeys.length ? JSON.stringify(input.photoKeys) : null, input.photoKeys[0] ?? null, now)
       .run();
     return res.meta.last_row_id;
   }
@@ -80,6 +82,38 @@ export async function updatePendingSpace(
   return res.meta.changes === 1;
 }
 
+function parseKeys(raw: string | null): string[] {
+  try {
+    const v = raw ? (JSON.parse(raw) as unknown) : [];
+    return Array.isArray(v) ? v.filter((k): k is string => typeof k === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Owner picks the cover among the space's own photos. False = not yours, or not one of your photos. */
+export async function setCoverKey(db: D1Database, ownerId: number, spaceId: number, key: string): Promise<boolean> {
+  const space = await getOwnedSpace(db, ownerId, spaceId);
+  if (!space || !parseKeys(space.photo_keys).includes(key)) return false;
+  const res = await db.prepare("UPDATE spaces SET cover_key = ? WHERE id = ? AND owner_id = ?").bind(key, spaceId, ownerId).run();
+  return res.meta.changes === 1;
+}
+
+/** Appends already-stored photo keys (max MAX_PHOTOS in total) while the space is pending or active. */
+export async function addSpacePhotos(db: D1Database, ownerId: number, spaceId: number, keys: string[]): Promise<boolean> {
+  const space = await getOwnedSpace(db, ownerId, spaceId);
+  if (!space || keys.length === 0 || (space.status !== "pending" && space.status !== "active")) return false;
+  const existing = parseKeys(space.photo_keys);
+  if (existing.length + keys.length > MAX_PHOTOS) return false;
+  const all = [...existing, ...keys];
+  const cover = resolveCoverKey(existing, space.cover_key) ?? keys[0];
+  const res = await db
+    .prepare("UPDATE spaces SET photo_keys = ?, cover_key = ? WHERE id = ? AND owner_id = ? AND status IN ('pending', 'active')")
+    .bind(JSON.stringify(all), cover, spaceId, ownerId)
+    .run();
+  return res.meta.changes === 1;
+}
+
 export type SpaceStage = "pending" | "collecting" | "evaluated" | "rejected" | "paused";
 export type OwnerSpaceCard = {
   id: number;
@@ -99,12 +133,12 @@ export type OwnerSpaceCard = {
 export async function listOwnerSpaces(db: D1Database, ownerId: number): Promise<OwnerSpaceCard[]> {
   const { results } = await db
     .prepare(
-      `SELECT s.id, s.name, s.neighborhood, s.slug, s.status, s.owner_consent, s.reject_reason,
+      `SELECT s.id, s.name, s.neighborhood, s.slug, s.status, s.owner_consent, s.reject_reason, s.cover_key, s.photo_keys,
               (SELECT COUNT(*) FROM survey_responses r WHERE r.space_id = s.id) AS response_count
        FROM spaces s WHERE s.owner_id = ? ORDER BY s.id DESC`,
     )
     .bind(ownerId)
-    .all<{ id: number; name: string; neighborhood: string; slug: string; status: Space["status"]; owner_consent: number; reject_reason: string | null; response_count: number }>();
+    .all<{ id: number; name: string; neighborhood: string; slug: string; status: Space["status"]; owner_consent: number; reject_reason: string | null; cover_key: string | null; photo_keys: string | null; response_count: number }>();
   const cards: OwnerSpaceCard[] = [];
   for (const s of results) {
     const isPublic = s.status === "active" && s.owner_consent === 1;
@@ -113,7 +147,8 @@ export async function listOwnerSpaces(db: D1Database, ownerId: number): Promise<
       s.status === "pending" ? "pending" : s.status === "rejected" ? "rejected" : !isPublic ? "paused" : candidateCount > 0 ? "evaluated" : "collecting";
     cards.push({
       id: s.id, name: s.name, neighborhood: s.neighborhood, slug: s.slug, status: s.status, stage,
-      responseCount: s.response_count, candidateCount, rejectReason: s.reject_reason, hasCover: false,
+      responseCount: s.response_count, candidateCount, rejectReason: s.reject_reason,
+      hasCover: Boolean(s.cover_key) || parseKeys(s.photo_keys).length > 0,
     });
   }
   return cards;

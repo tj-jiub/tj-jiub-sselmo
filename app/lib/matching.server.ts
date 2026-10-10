@@ -1,4 +1,5 @@
 import { PUBLIC_SPACE_SQL } from "./spaces.server";
+import { resolveCoverKey } from "./cover";
 import { tallySpace, type SpaceTally } from "./matching";
 import type { SurveyAnswers } from "./survey";
 
@@ -23,4 +24,22 @@ export async function loadPublicTallies(db: D1Database): Promise<SpaceTally[]> {
   return spaces.map((s) =>
     tallySpace({ slug: s.slug, name: s.name, neighborhood: s.neighborhood, district: s.district }, bySpace.get(s.id) ?? []),
   );
+}
+
+/** Slugs of public spaces that have a cover photo. Non-public spaces never appear here. */
+export async function loadPublicCoverSlugs(db: D1Database): Promise<string[]> {
+  const { results } = await db
+    .prepare(`SELECT slug, photo_keys, cover_key FROM spaces WHERE ${PUBLIC_SPACE_SQL}`)
+    .all<{ slug: string; photo_keys: string | null; cover_key: string | null }>();
+  return results
+    .filter((r) => {
+      let photos: string[] = [];
+      try {
+        photos = r.photo_keys ? (JSON.parse(r.photo_keys) as string[]) : [];
+      } catch {
+        // malformed photo_keys: treat as no photos
+      }
+      return resolveCoverKey(photos, r.cover_key) !== null;
+    })
+    .map((r) => r.slug);
 }
