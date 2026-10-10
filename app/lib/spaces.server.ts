@@ -14,6 +14,8 @@ export type Space = {
   status: "pending" | "active" | "rejected";
   reject_reason: string | null;
   photo_keys: string | null;
+  /** R2 key of the cover photo (one of photo_keys); null = none. */
+  cover_key: string | null;
   margin_pct: number | null;
   scale_factor: number;
   created_at: number;

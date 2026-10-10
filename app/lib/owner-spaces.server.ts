@@ -92,6 +92,8 @@ export type OwnerSpaceCard = {
   responseCount: number;
   candidateCount: number;
   rejectReason: string | null;
+  /** True when the space has a cover photo; the page links ownerCoverUrl(id). */
+  hasCover: boolean;
 };
 
 export async function listOwnerSpaces(db: D1Database, ownerId: number): Promise<OwnerSpaceCard[]> {
@@ -111,7 +113,7 @@ export async function listOwnerSpaces(db: D1Database, ownerId: number): Promise<
       s.status === "pending" ? "pending" : s.status === "rejected" ? "rejected" : !isPublic ? "paused" : candidateCount > 0 ? "evaluated" : "collecting";
     cards.push({
       id: s.id, name: s.name, neighborhood: s.neighborhood, slug: s.slug, status: s.status, stage,
-      responseCount: s.response_count, candidateCount, rejectReason: s.reject_reason,
+      responseCount: s.response_count, candidateCount, rejectReason: s.reject_reason, hasCover: false,
     });
   }
   return cards;
