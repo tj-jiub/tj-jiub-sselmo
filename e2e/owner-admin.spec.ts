@@ -30,6 +30,8 @@ test("owner registers a space → not public → admin approves → public page 
   await owner.getByLabel(/이용약관/).check();
   await owner.getByLabel(/개인정보 수집/).check();
   await owner.getByRole("button", { name: "시작하기" }).click();
+  // Let the welcome form's redirect land first; otherwise it can override the next goto.
+  await expect(owner).toHaveURL(/\/owner\/spaces$/);
   await owner.goto("/owner/spaces/new");
   const name = `승인e2e ${Date.now()}`;
   await owner.locator('input[name="name"]').fill(name);
@@ -43,7 +45,12 @@ test("owner registers a space → not public → admin approves → public page 
   await adminLogin(admin);
   const row = admin.locator("li, tr, div", { has: admin.getByText(name) }).filter({ has: admin.getByRole("button", { name: "승인" }) }).last();
   await expect(row).toContainText("승인 흐름 e2e");
-  await row.getByRole("button", { name: "승인" }).click();
+  // Wait for the approve POST to finish before reading the owner's view; otherwise the owner page can
+  // load while the space is still pending.
+  await Promise.all([
+    admin.waitForResponse((r) => r.request().method() === "POST" && r.url().includes("/admin")),
+    row.getByRole("button", { name: "승인" }).click(),
+  ]);
 
   await owner.goto("/owner/spaces");
   const card = owner.locator("article, li, div", { has: owner.getByText(name) }).last();
@@ -58,7 +65,9 @@ test("owner memo is visible to the admin; the home page has no admin link", asyn
   await ownerLogin(ownerPage, "owner@ssulmo.local");
   await ownerPage.getByRole("link", { name: "후보 보기" }).first().click();
   const memoText = `관리자에게 보이는 메모 ${Date.now()}`;
-  const card = ownerPage.getByTestId("candidate-card").first();
+  // Second card: owner.spec asserts the seeded memo on the first card and edits the last one, in a
+  // parallel worker; touching either would race with it.
+  const card = ownerPage.getByTestId("candidate-card").nth(1);
   const memo = card.getByTestId("memo");
   const original = await memo.inputValue();
   await memo.fill(memoText);
