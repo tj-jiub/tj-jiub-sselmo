@@ -27,7 +27,7 @@ async function signUp(page: Page, tag: string, profile = true) {
   await page.goto(href);
   await expect(page).toHaveURL(/\/owner\/welcome$/);
   if (profile) {
-    await page.locator('input[name="name"]').fill("테스트 건물주");
+    await page.locator('input[name="name"]').fill("e2e·테스트 건물주");
     await page.locator('input[name="phone"]').fill("010-5555-0000");
     await page.getByLabel(/이용약관/).check();
     await page.getByLabel(/개인정보 수집/).check();
@@ -58,7 +58,7 @@ test("new owner: sign up, register a space, stays private, link is single-use", 
 
   await page.getByRole("link", { name: /공실 등록/ }).click();
   await expect(page).toHaveURL(/\/owner\/spaces\/new$/);
-  const name = `e2e 공간 ${Date.now()}`;
+  const name = `e2e·공간 ${Date.now()}`;
   await page.locator('input[name="name"]').fill(name);
   await page.locator('input[name="district"]').fill("성동구");
   await page.locator('input[name="dong"]').fill("성수동");

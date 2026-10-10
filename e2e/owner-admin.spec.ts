@@ -25,7 +25,7 @@ test("owner registers a space → not public → admin approves → public page 
   const admin = await (await browser.newContext({ baseURL: test.info().project.use.baseURL, ...test.info().project.use })).newPage();
 
   await ownerLogin(owner, `e2e-x-${Date.now()}@example.com`);
-  await owner.locator('input[name="name"]').fill("승인 흐름 e2e");
+  await owner.locator('input[name="name"]').fill("e2e·승인 흐름");
   await owner.locator('input[name="phone"]').fill("010-7777-0000");
   await owner.getByLabel(/이용약관/).check();
   await owner.getByLabel(/개인정보 수집/).check();
@@ -33,7 +33,7 @@ test("owner registers a space → not public → admin approves → public page 
   // Let the welcome form's redirect land first; otherwise it can override the next goto.
   await expect(owner).toHaveURL(/\/owner\/spaces$/);
   await owner.goto("/owner/spaces/new");
-  const name = `승인e2e ${Date.now()}`;
+  const name = `e2e·승인 ${Date.now()}`;
   await owner.locator('input[name="name"]').fill(name);
   await owner.locator('input[name="district"]').fill("성동구");
   await owner.locator('input[name="dong"]').fill("행당동");
@@ -44,7 +44,7 @@ test("owner registers a space → not public → admin approves → public page 
 
   await adminLogin(admin);
   const row = admin.locator("li, tr, div", { has: admin.getByText(name) }).filter({ has: admin.getByRole("button", { name: "승인" }) }).last();
-  await expect(row).toContainText("승인 흐름 e2e");
+  await expect(row).toContainText("e2e·승인 흐름");
   // Wait for the approve POST to finish before reading the owner's view; otherwise the owner page can
   // load while the space is still pending.
   await Promise.all([

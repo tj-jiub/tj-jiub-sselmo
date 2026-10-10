@@ -26,7 +26,7 @@ test("survey → cooldown → public summary", async ({ page }) => {
 });
 
 test("application → admin sees it after login", async ({ page }) => {
-  const name = `테스트${Date.now() % 100000}`;
+  const name = `e2e·테스트${Date.now() % 100000}`;
   await page.goto("/apply/mangwon-01");
   await page.getByLabel("하고 싶은 업종").fill("젤라또 가게");
   await page.getByLabel("사업계획", { exact: true }).fill("동네 주민 대상 소형 젤라또 가게");
@@ -107,7 +107,7 @@ async function adminOpenApplication(page: import("@playwright/test").Page, name:
 }
 
 test("쓸모 track application → AI evaluation → result page shows verdict and report", async ({ page }) => {
-  const name = `AI${Date.now() % 100000}`;
+  const name = `e2e·AI${Date.now() % 100000}`;
   await applyOnSsulmoTrack(page, name);
   await adminOpenApplication(page, name);
   const link = await page.locator("span", { hasText: /\/result\// }).first().innerText();
@@ -124,7 +124,7 @@ test("쓸모 track application → AI evaluation → result page shows verdict a
 });
 
 test("admin records consulting months: 1% fee in a profit month, 0 in a loss month", async ({ page }) => {
-  const name = `FEE${Date.now() % 100000}`;
+  const name = `e2e·FEE${Date.now() % 100000}`;
   await applyOnSsulmoTrack(page, name);
   await adminOpenApplication(page, name);
 
