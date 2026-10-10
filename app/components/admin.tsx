@@ -1,0 +1,69 @@
+import type { ReactNode } from "react";
+import { Link } from "react-router";
+
+/** Content frame inside the admin shell (the shell already provides the nav). */
+export function AdminPage({ children }: { children: ReactNode }) {
+  return <main className="mx-auto w-full max-w-[1100px] px-4 py-8 lg:px-10 lg:py-12">{children}</main>;
+}
+
+/**
+ * Big count on the 할 일 cards. Plain number for now; the lead swaps NumberTicker in here
+ * (one place) once the ticker branch is merged.
+ */
+export function CountNumber({ value, unit }: { value: number; unit: string }) {
+  return (
+    <span className="font-mono text-[44px] leading-none font-medium tabular-nums">
+      {value.toLocaleString("ko-KR")}
+      <span className="ml-1 font-sans text-[18px] font-medium">{unit}</span>
+    </span>
+  );
+}
+
+export function Chip({ to, on, children }: { to: string; on: boolean; children: ReactNode }) {
+  return (
+    <Link
+      to={to}
+      aria-current={on ? "true" : undefined}
+      className={`inline-flex min-h-10 items-center rounded-full border px-3.5 py-1.5 text-[15px] ${on ? "border-ink bg-ink text-paper" : "border-line bg-paper text-ink hover:border-ink"}`}
+    >
+      {children}
+    </Link>
+  );
+}
+
+export function ProgressBar({ value, max }: { value: number; max: number }) {
+  return (
+    <div className="h-1.5 overflow-hidden rounded-[3px] bg-line" role="progressbar" aria-valuemin={0} aria-valuemax={max} aria-valuenow={value}>
+      <i className="block h-full bg-green-deep" style={{ width: `${Math.round((value / max) * 100)}%` }} />
+    </div>
+  );
+}
+
+/** The computed "다음 할 일" box; `children` are the real action buttons. */
+export function NextBox({ title, hint, children }: { title: string; hint: string; children?: ReactNode }) {
+  return (
+    <section
+      data-testid="next-action"
+      className="mt-5 flex flex-wrap items-center justify-between gap-4 rounded-[14px] border border-yellow-deep bg-[#fffbe6] px-5 py-4"
+    >
+      <div className="min-w-0">
+        <p className="text-[17px] font-bold">다음 할 일: {title}</p>
+        <p className="text-[15px] text-muted">{hint}</p>
+      </div>
+      {children && <div className="flex flex-wrap items-center gap-2">{children}</div>}
+    </section>
+  );
+}
+
+/** Collapsible secondary section (native <details>, works without JS). */
+export function Fold({ title, id, open, children }: { title: string; id?: string; open?: boolean; children: ReactNode }) {
+  return (
+    <details id={id} open={open} className="mb-4 rounded-[14px] border border-line bg-paper">
+      <summary className="min-h-12 cursor-pointer px-4 py-3 text-base font-bold">{title}</summary>
+      <div className="border-t border-line px-4 py-4">{children}</div>
+    </details>
+  );
+}
+
+export const adminDate = (ms: number) =>
+  new Date(ms).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul", month: "long", day: "numeric" });

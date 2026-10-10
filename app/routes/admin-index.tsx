@@ -1,76 +1,113 @@
 import { data, Form, Link } from "react-router";
 import type { Route } from "./+types/admin-index";
 import { requireAdmin } from "~/lib/auth.server";
-import { listApplications } from "~/lib/applications.server";
-import { listSpaces } from "~/lib/spaces.server";
-import { mailerFromEnv } from "~/lib/mail.server";
-import { spaceStatusLabel } from "~/lib/space-status";
-import { approveSpace, listPendingSpaces, rejectSpace } from "~/lib/owner-spaces.server";
-import { btnSmall, btnSmallGhost, ErrorNote, Section, Shell, Title } from "~/components/ui";
+import { adminTodoCounts, listAdminSpaces } from "~/lib/admin-todo.server";
+import { moderateSpace } from "~/lib/admin-lists.server";
+import { listPendingSpaces } from "~/lib/owner-spaces.server";
+import { adminFileUrl } from "~/lib/cover";
+import { SpaceAvatar } from "~/components/SpaceAvatar";
+import { AdminPage, adminDate, CountNumber } from "~/components/admin";
+import { btnSmall, btnSmallGhost, ErrorNote, Section } from "~/components/ui";
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const env = context.cloudflare.env;
   await requireAdmin(request, env);
-  return { pending: await listPendingSpaces(env.DB), spaces: await listSpaces(env.DB), applications: await listApplications(env.DB), autoMail: mailerFromEnv(env) !== null };
+  const now = Date.now();
+  const covers = new Map((await listAdminSpaces(env.DB, { status: "pending" })).map((s) => [s.id, s.cover_key]));
+  return {
+    counts: await adminTodoCounts(env.DB, now),
+    pending: (await listPendingSpaces(env.DB)).map((p) => ({ ...p, coverKey: covers.get(p.id) ?? p.photoKeys[0] ?? null })),
+    today: new Date(now).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul", month: "long", day: "numeric", weekday: "long" }),
+  };
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
   const env = context.cloudflare.env;
   await requireAdmin(request, env);
-  const form = await request.formData();
-  const intent = form.get("intent");
-  const rawId = String(form.get("spaceId") ?? "");
-  if (!/^\d+$/.test(rawId)) return data({ error: "공실 번호가 올바르지 않아요." }, { status: 400 });
-  const id = Number(rawId);
-  if (!Number.isSafeInteger(id)) return data({ error: "공실 번호가 올바르지 않아요." }, { status: 400 });
-  if (intent === "approve") {
-    if (!(await approveSpace(env.DB, id))) return data({ error: "이미 처리됐거나 승인할 수 없는 공실이에요." }, { status: 409 });
-  } else if (intent === "reject") {
-    if (!(await rejectSpace(env.DB, id, String(form.get("reason") ?? "")))) {
-      return data({ error: "이미 처리됐거나 반려할 수 없는 공실이에요." }, { status: 409 });
-    }
-  } else {
-    return data({ error: "알 수 없는 요청이에요." }, { status: 400 });
-  }
+  const failure = await moderateSpace(env.DB, await request.formData());
+  if (failure) return data({ error: failure.error }, { status: failure.status });
   return { error: null };
 }
 
 export default function AdminIndex({ loaderData, actionData }: Route.ComponentProps) {
+  const { counts, pending, today } = loaderData;
+  const cards = [
+    { key: "pendingSpaces", to: "/admin/spaces?status=pending", n: counts.pendingSpaces, unit: "곳", title: "공실 승인 대기", hint: "건물주가 등록했어요" },
+    { key: "unmailed", to: "/admin/applications?status=mail", n: counts.unmailed, unit: "건", title: "결과 메일 안 보냄", hint: "평가는 끝났어요" },
+    { key: "aiFailed", to: "/admin/applications?status=failed", n: counts.aiFailed, unit: "건", title: "AI 평가 실패", hint: "재평가가 필요해요" },
+    { key: "revenueMissing", to: "/admin/applications?status=revenue", n: counts.revenueMissing, unit: "건", title: "이번 달 매출 미기록", hint: "쓸모 트랙" },
+  ] as const;
+
   return (
-    <Shell wide nav={false}>
-      <Title eyebrow="관리자">대시보드</Title>
+    <AdminPage>
+      <header className="mb-8">
+        <p className="text-[15px] font-medium text-muted">{today}</p>
+        <h1 className="mt-2 text-[26px] font-bold lg:text-[32px]">
+          {counts.total > 0 ? (
+            <>
+              지금 처리할 일 <mark className="hl">{counts.total}건</mark>
+            </>
+          ) : (
+            "처리할 일이 없어요"
+          )}
+        </h1>
+      </header>
       <ErrorNote message={actionData?.error} />
-      <Section title={`확인 대기 공실 ${loaderData.pending.length}건`}>
-        {loaderData.pending.length === 0 ? (
+
+      <div className="mb-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {cards.map((c) => (
+          <Link
+            key={c.key}
+            to={c.to}
+            data-testid={`todo-${c.key}`}
+            data-hot={c.n > 0 ? "1" : "0"}
+            className={`flex min-h-36 flex-col gap-2 rounded-[14px] border p-4 lg:p-5 ${c.n > 0 ? "border-yellow-deep bg-yellow" : "border-line bg-paper"}`}
+          >
+            <CountNumber value={c.n} unit={c.unit} />
+            <b className="mt-1 text-base">{c.title}</b>
+            <span className="text-[15px] text-muted">{c.n > 0 ? c.hint : "처리할 일이 없어요"}</span>
+          </Link>
+        ))}
+      </div>
+
+      <Section title={`승인 대기 공실 ${pending.length}곳`}>
+        {pending.length === 0 ? (
           <p className="rounded-[10px] border border-dashed border-line p-3 text-base text-muted">확인 대기 중인 공실이 없어요.</p>
         ) : (
           <ul className="divide-y divide-line">
-            {loaderData.pending.map((p) => (
-              <li key={p.id} className="py-4 text-base">
-                <p>
-                  <span className="font-medium">{p.name}</span>
-                  <span className="ml-2 text-muted">{p.neighborhood}</span>
-                </p>
-                <dl className="mt-2 grid grid-cols-[6rem_1fr] gap-y-1">
-                  <dt className="text-muted">건물주</dt>
-                  <dd className="break-all">
-                    {p.ownerName ?? "이름 없음"} · {p.ownerEmail}
-                    {p.ownerPhone ? ` · ${p.ownerPhone}` : ""}
-                  </dd>
-                  <dt className="text-muted">위치 특징</dt>
-                  <dd className="whitespace-pre-wrap">{p.locationNotes ?? "없음"}</dd>
-                  <dt className="text-muted">사진</dt>
-                  <dd>
-                    {p.photoKeys.length === 0
-                      ? "없음"
-                      : p.photoKeys.map((k, i) => (
-                          <a key={k} className="mr-3 underline" href={`/admin/files/${k}`}>
+            {pending.map((p) => (
+              <li key={p.id} data-testid="pending-space" className="py-4 text-base">
+                <div className="flex gap-4">
+                  <SpaceAvatar src={p.coverKey ? adminFileUrl(p.coverKey) : null} name={p.name} neighborhood={p.neighborhood} size={56} />
+                  <div className="min-w-0 flex-1">
+                    <p>
+                      <Link to={`/admin/spaces/${p.id}`} className="font-medium underline-offset-4 hover:underline">
+                        {p.name}
+                      </Link>
+                    </p>
+                    <p className="text-[15px] text-muted">
+                      {p.neighborhood} · 건물주 {p.ownerName ?? "이름 없음"} · {adminDate(p.createdAt)} 등록
+                    </p>
+                    <p className="break-all text-[15px] text-muted">
+                      {p.ownerEmail}
+                      {p.ownerPhone ? ` · ${p.ownerPhone}` : ""}
+                    </p>
+                    <details className="mt-2 text-[15px]">
+                      <summary className="min-h-8 cursor-pointer text-muted">
+                        사진 {p.photoKeys.length}장 · 위치 특징 {p.locationNotes ? "있음" : "없음"} 보기
+                      </summary>
+                      <p className="mt-2 whitespace-pre-wrap">{p.locationNotes ?? "위치 특징이 없어요."}</p>
+                      <p className="mt-2">
+                        {p.photoKeys.map((k, i) => (
+                          <a key={k} className="mr-3 underline" href={adminFileUrl(k)}>
                             사진 {i + 1}
                           </a>
                         ))}
-                  </dd>
-                </dl>
-                <div className="mt-3 flex flex-wrap items-center gap-3">
+                      </p>
+                    </details>
+                  </div>
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-3 sm:pl-[72px]">
                   <Form method="post">
                     <input type="hidden" name="spaceId" value={p.id} />
                     <input type="hidden" name="intent" value="approve" />
@@ -94,56 +131,6 @@ export default function AdminIndex({ loaderData, actionData }: Route.ComponentPr
           </ul>
         )}
       </Section>
-      <Section title="공간">
-        <ul className="divide-y divide-line">
-          {loaderData.spaces.map((s) => (
-            <li key={s.id}>
-              <Link to={`/admin/spaces/${s.id}`} className="flex min-h-12 items-center justify-between gap-3 py-3">
-                <span>
-                  <span className="font-medium">{s.name}</span>
-                  <span className="ml-2 text-muted">{s.neighborhood}</span>
-                </span>
-                <span className="shrink-0 text-base text-muted">
-                  응답 {s.response_count} · {spaceStatusLabel(s)}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-        <Link to="/admin/spaces/new" className={`${btnSmall} mt-4`}>
-          + 공간 등록
-        </Link>
-      </Section>
-      <Section title="창업 신청">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[44rem] text-left text-base">
-            <thead className="text-[15px] text-muted">
-              <tr>
-                <th className="py-2 font-medium">신청자 · 업종</th>
-                <th className="py-2 font-medium">공간</th>
-                <th className="py-2 font-medium">트랙</th>
-                <th className="py-2 font-medium">AI 평가</th>
-                <th className="py-2 font-medium">결과 전달</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-line tabular-nums">
-              {loaderData.applications.map((a) => (
-                <tr key={a.id}>
-                  <td className="py-2.5">
-                    <Link to={`/admin/applications/${a.id}`} className="font-medium underline-offset-4 hover:underline">
-                      {a.contact_name} · {a.business_type}
-                    </Link>
-                  </td>
-                  <td className="py-2.5 text-muted">{a.space_name}</td>
-                  <td className="py-2.5">{a.track === "ssulmo" ? "쓸모" : "일반"}</td>
-                  <td className="py-2.5">{a.ai_status === "done" ? `완료 ${a.ai_score}점` : a.ai_status === "failed" ? "실패" : "대기"}</td>
-                  <td className="py-2.5">{a.result_mailed_at ? (loaderData.autoMail ? "자동" : "보냄") : "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Section>
-    </Shell>
+    </AdminPage>
   );
 }
