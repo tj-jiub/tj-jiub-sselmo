@@ -23,3 +23,17 @@ export async function storeUpload(bucket: R2Bucket, prefix: string, file: File):
   });
   return key;
 }
+
+export const MAX_PHOTOS = 5;
+const PHOTO_EXTENSIONS = ["png", "jpg", "jpeg", "webp"];
+
+/** Owner photos: images only, at most 5, each within the usual size limit. Empty file inputs are ignored. */
+export function checkPhotos(values: FormDataEntryValue[]): ParseResult<File[]> {
+  const files = values.filter((v): v is File => v instanceof File && v.size > 0);
+  if (files.length > MAX_PHOTOS) return { ok: false, error: `사진은 최대 ${MAX_PHOTOS}장까지 올릴 수 있어요.` };
+  for (const f of files) {
+    if (!PHOTO_EXTENSIONS.includes(extensionOf(f.name))) return { ok: false, error: "사진은 PNG, JPG, WEBP 파일만 올릴 수 있어요." };
+    if (f.size > MAX_UPLOAD_BYTES) return { ok: false, error: "사진은 한 장에 10MB 이하만 올릴 수 있어요." };
+  }
+  return { ok: true, value: files };
+}

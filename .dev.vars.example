@@ -8,3 +8,6 @@ ANTHROPIC_API_KEY=
 # Result mail via Resend: both must be set, otherwise the admin copies the link by hand
 RESEND_API_KEY=
 MAIL_FROM=
+
+# Owner magic-link login: show the link on the page when no mail is configured. LOCAL/E2E ONLY - never set in production
+DEV_SHOW_LOGIN_LINK=1

@@ -9,6 +9,13 @@ export function resultMailBody(link: string): MailBody {
   return { subject: "쓸모 평가 결과가 나왔어요", text: `안녕하세요, 쓸모예요.\n평가 결과가 나왔어요. 아래 링크에서 확인해 주세요.\n${link}` };
 }
 
+export function loginMailBody(link: string): MailBody {
+  return {
+    subject: "쓸모 로그인 링크",
+    text: `안녕하세요, 쓸모예요.\n아래 링크를 누르면 로그인돼요. 링크는 15분 동안, 한 번만 쓸 수 있어요.\n${link}\n\n본인이 요청하지 않았다면 이 메일을 무시해 주세요.`,
+  };
+}
+
 export async function sendWithResend(
   m: { apiKey: string; from: string; to: string } & MailBody,
   fetchImpl: FetchLike = fetch,

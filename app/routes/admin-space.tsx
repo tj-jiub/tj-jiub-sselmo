@@ -2,7 +2,7 @@ import { data, Form, Link } from "react-router";
 import type { Route } from "./+types/admin-space";
 import { requireAdmin } from "~/lib/auth.server";
 import { getSpace, parseSpaceSettings, saveSpaceSettings, setOwnerConsent } from "~/lib/spaces.server";
-import { ensureOwnerToken, listShortlist, regenerateOwnerToken } from "~/lib/owner.server";
+import { listShortlist } from "~/lib/owner.server";
 import { loadSpaceDemand } from "~/lib/revenue.server";
 import { formatManwonRange } from "~/lib/money";
 import { defaultMargin } from "~/lib/revenue";
@@ -10,7 +10,6 @@ import { listAnswers, listContacts } from "~/lib/surveys.server";
 import { aggregate, distribution, formatIntent, PUBLIC_THRESHOLD } from "~/lib/report";
 import { RESPONDENT_TYPE, SPEND_RANGE, VISIT_FREQUENCY, VISIT_TIME } from "~/lib/survey";
 import { QrDownload } from "~/components/QrDownload";
-import { CopyButton } from "~/components/CopyButton";
 import { btnSmall, btnSmallGhost, ErrorNote, Section, Shell, Title } from "~/components/ui";
 
 export async function loader({ request, params, context }: Route.LoaderArgs) {
@@ -48,10 +47,6 @@ export async function action({ request, params, context }: Route.ActionArgs) {
     if (!parsed.ok) return data({ error: parsed.error, saved: null }, { status: 400 });
     await saveSpaceSettings(env.DB, id, parsed.value);
     return { error: null, saved: "settings" };
-  } else if (intent === "create-owner-token") {
-    await ensureOwnerToken(env.DB, id);
-  } else if (intent === "regenerate-owner-token") {
-    await regenerateOwnerToken(env.DB, id);
   }
   return { error: null, saved: null };
 }
@@ -62,7 +57,6 @@ export default function AdminSpace({ loaderData, actionData }: Route.ComponentPr
   const { space, origin, report, breakdowns, contacts, demand, candidates } = loaderData;
   const consented = space.owner_consent === 1;
   const surveyUrl = `${origin}/s/${space.slug}`;
-  const ownerUrl = space.owner_token ? `${origin}/o/${space.owner_token}` : null;
   const est = demand.estimate;
 
   return (
@@ -111,26 +105,6 @@ export default function AdminSpace({ loaderData, actionData }: Route.ComponentPr
           </Section>
         </div>
         <div className="min-w-0">
-          <Section title="건물주 링크">
-            {ownerUrl ? (
-              <>
-                <div className="flex items-center gap-2 rounded-[10px] bg-soft px-3 py-2.5">
-                  <span className="min-w-0 flex-1 truncate text-[15px]">{ownerUrl}</span>
-                  <CopyButton text={ownerUrl} label="복사" />
-                </div>
-                <Form method="post" className="mt-3 flex flex-wrap items-center gap-3 text-base">
-                  <input type="hidden" name="intent" value="regenerate-owner-token" />
-                  <button className={btnSmallGhost}>새로 만들기</button>
-                  <span className="text-[15px] text-muted">새로 만들면 예전 링크는 바로 막혀요.</span>
-                </Form>
-              </>
-            ) : (
-              <Form method="post">
-                <input type="hidden" name="intent" value="create-owner-token" />
-                <button className={btnSmall}>건물주 링크 만들기</button>
-              </Form>
-            )}
-          </Section>
           <Section title="현재 후보 (60점 이상 상위 5명)">
             {candidates.length === 0 ? (
               <p className="rounded-[10px] border border-dashed border-line p-3 text-base text-muted">아직 후보가 없어요.</p>
@@ -193,7 +167,6 @@ export default function AdminSpace({ loaderData, actionData }: Route.ComponentPr
           <li>설문: {surveyUrl}</li>
           <li>공개 요약: {origin}/r/{space.slug}</li>
           <li>창업 신청: {origin}/apply/{space.slug}</li>
-          <li>건물주 링크: {ownerUrl ?? "아직 만들지 않았어요"}</li>
         </ul>
       </Section>
 

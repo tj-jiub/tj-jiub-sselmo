@@ -1,25 +1,8 @@
-import { toHex } from "./hex.ts";
 import type { AiReport } from "./ai-report.ts";
 import { aggregate, formatIntent, isPublicReady } from "./report.ts";
 import { shortlist } from "./shortlist.ts";
 import type { SurveyAnswers } from "./survey.ts";
 import type { Track } from "./applications.server.ts";
-
-// 128 random bits: /o/:token has no login, so the token is the only key.
-const newToken = () => toHex(crypto.getRandomValues(new Uint8Array(16)));
-
-export async function ensureOwnerToken(db: D1Database, spaceId: number): Promise<string> {
-  const row = await db.prepare("SELECT owner_token FROM spaces WHERE id = ?").bind(spaceId).first<{ owner_token: string | null }>();
-  if (!row) throw new Error("space not found");
-  if (row.owner_token) return row.owner_token;
-  return regenerateOwnerToken(db, spaceId);
-}
-
-export async function regenerateOwnerToken(db: D1Database, spaceId: number): Promise<string> {
-  const token = newToken();
-  await db.prepare("UPDATE spaces SET owner_token = ? WHERE id = ?").bind(token, spaceId).run();
-  return token;
-}
 
 export type Candidate = {
   id: number;
@@ -33,7 +16,7 @@ export type Candidate = {
   estCostManwon: number;
 };
 
-/** Shortlist for one space. Explicit columns only: no name, email or plan text. */
+/** Shortlist for one space (also the admin preview). Explicit columns only: no name, email or plan text. */
 export async function listShortlist(db: D1Database, spaceId: number): Promise<Candidate[]> {
   const { results } = await db
     .prepare(
@@ -71,27 +54,13 @@ export async function listShortlist(db: D1Database, spaceId: number): Promise<Ca
   });
 }
 
-export type OwnerView = {
-  space: { name: string; neighborhood: string };
-  demand: { ready: boolean; total: number; top: Array<{ type: string; count: number; phrase: string }> };
-  candidates: Candidate[];
-};
+export type SpaceDemand = { ready: boolean; total: number; top: Array<{ type: string; count: number; phrase: string }> };
 
-// The token is the key, but withdrawing the building-owner consent still takes the
-// page down (same rule as every other public page).
-export async function getOwnerView(db: D1Database, token: string): Promise<OwnerView | null> {
-  if (!token) return null;
-  const space = await db.prepare("SELECT id, name, neighborhood FROM spaces WHERE owner_token = ? AND owner_consent = 1").bind(token).first<{
-    id: number;
-    name: string;
-    neighborhood: string;
-  }>();
-  if (!space) return null;
-  const { results } = await db.prepare("SELECT answers FROM survey_responses WHERE space_id = ?").bind(space.id).all<{ answers: string }>();
+/** Same threshold rule as /r/:slug: below 50 responses nothing numeric is shown. */
+export async function getSpaceDemand(db: D1Database, spaceId: number): Promise<SpaceDemand> {
+  const { results } = await db.prepare("SELECT answers FROM survey_responses WHERE space_id = ?").bind(spaceId).all<{ answers: string }>();
   const report = aggregate(results.map((r) => JSON.parse(r.answers) as SurveyAnswers));
-  // Below the public threshold nothing numeric is shown, same rule as /r/:slug.
-  const demand = isPublicReady(report.total)
+  return isPublicReady(report.total)
     ? { ready: true, total: report.total, top: report.byType.slice(0, 3).map((t) => ({ ...t, phrase: formatIntent(report.total, t.count) })) }
     : { ready: false, total: 0, top: [] };
-  return { space: { name: space.name, neighborhood: space.neighborhood }, demand, candidates: await listShortlist(db, space.id) };
 }

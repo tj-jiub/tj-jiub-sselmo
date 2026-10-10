@@ -8,7 +8,6 @@ export default [
   route("r/:slug", "routes/public-report.tsx"),
   route("apply/:slug", "routes/apply.tsx"),
   route("result/:token", "routes/result.tsx"),
-  route("o/:token", "routes/owner.tsx"),
   route("admin/login", "routes/admin-login.tsx"),
   route("admin/logout", "routes/admin-logout.tsx"),
   route("admin/files/*", "routes/admin-file.tsx"),

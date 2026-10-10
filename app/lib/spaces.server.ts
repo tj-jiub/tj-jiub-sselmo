@@ -10,6 +10,10 @@ export type Space = {
   consent_file_key: string | null;
   location_notes: string | null;
   owner_token: string | null;
+  owner_id: number | null;
+  status: "pending" | "active" | "rejected";
+  reject_reason: string | null;
+  photo_keys: string | null;
   margin_pct: number | null;
   scale_factor: number;
   created_at: number;
@@ -59,10 +63,16 @@ export async function getSpace(db: D1Database, id: number): Promise<Space | null
   return db.prepare("SELECT * FROM spaces WHERE id = ?").bind(id).first<Space>();
 }
 
-// Public pages must use this: a space without building-owner consent does
-// not exist as far as anonymous visitors are concerned.
+/**
+ * The one public gate: a space is visible to anonymous visitors only when the operator has
+ * approved it (status) AND the building owner consents. Every public query must use this.
+ */
+export const PUBLIC_SPACE_SQL = "status = 'active' AND owner_consent = 1";
+
+// Public pages must use this: a space that is not public does not exist
+// as far as anonymous visitors are concerned.
 export async function getPublicSpace(db: D1Database, slug: string): Promise<Space | null> {
-  return db.prepare("SELECT * FROM spaces WHERE slug = ? AND owner_consent = 1").bind(slug).first<Space>();
+  return db.prepare(`SELECT * FROM spaces WHERE slug = ? AND ${PUBLIC_SPACE_SQL}`).bind(slug).first<Space>();
 }
 
 export async function listSpaces(db: D1Database): Promise<Array<Space & { response_count: number }>> {
@@ -76,7 +86,7 @@ export async function listSpaces(db: D1Database): Promise<Array<Space & { respon
 }
 
 export async function listPublicSpaces(db: D1Database): Promise<Space[]> {
-  const { results } = await db.prepare("SELECT * FROM spaces WHERE owner_consent = 1 ORDER BY id DESC").all<Space>();
+  const { results } = await db.prepare(`SELECT * FROM spaces WHERE ${PUBLIC_SPACE_SQL} ORDER BY id DESC`).all<Space>();
   return results;
 }
 

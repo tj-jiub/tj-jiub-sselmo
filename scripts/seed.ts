@@ -2,7 +2,8 @@
 // responses + 8 applications; the others exist for the /find matching flow), all deterministic.
 // Applications are evaluated here with the real fake evaluator, so the admin, result and owner
 // pages show realistic AI results.
-// Fixed owner tokens: /o/oooo... (mangwon-01), /o/pppp... (seongsu-01), 32 chars each.
+// Owner account: owner@ssulmo.local owns seongsu-01 (one ★ + memo on 최예시) and one pending owner-registered space.
+// Log in at /owner with that email (DEV_SHOW_LOGIN_LINK=1 shows the link on the page).
 // Usage: node scripts/seed.ts > .wrangler/seed.sql (wired up as `npm run db:seed`).
 // Wipes existing rows first — local development only.
 // Imports use explicit .ts extensions and only modules without path aliases (plain node type-stripping).
@@ -30,11 +31,16 @@ const out: string[] = [
   "DELETE FROM consulting_months;",
   "DELETE FROM educator_links;",
   "DELETE FROM broker_intros;",
+  "DELETE FROM candidate_marks;",
   "DELETE FROM applications;",
   "DELETE FROM survey_contacts;",
   "DELETE FROM survey_responses;",
   "DELETE FROM spaces;",
-  `INSERT INTO spaces (name, district, neighborhood, slug, owner_consent, consent_file_key, location_notes, owner_token, created_at) VALUES ('망원동 1층 코너 공실', '마포구', '마포구 망원동', 'mangwon-01', 1, NULL, '망원시장 입구 도보 2분, 골목 코너 1층, 낮에는 주민·저녁에는 직장인 유동', '${"o".repeat(32)}', ${now - 20 * day});`,
+  "DELETE FROM owner_login_tokens;",
+  "DELETE FROM auth_attempts;",
+  "DELETE FROM owners;",
+  `INSERT INTO owners (email, name, phone, consent_terms_at, consent_privacy_at, created_at, last_login_at) VALUES ('owner@ssulmo.local', '이건물', '010-1234-5678', ${now - 30 * day}, ${now - 30 * day}, ${now - 30 * day}, ${now - day});`,
+  `INSERT INTO spaces (name, district, neighborhood, slug, owner_consent, consent_file_key, location_notes, created_at) VALUES ('망원동 1층 코너 공실', '마포구', '마포구 망원동', 'mangwon-01', 1, NULL, '망원시장 입구 도보 2분, 골목 코너 1층, 낮에는 주민·저녁에는 직장인 유동', ${now - 20 * day});`,
 ];
 
 // Skew demand so the report has a visible ranking.
@@ -72,7 +78,7 @@ const extraSpaces: Extra[] = [
 for (const [k, sp] of extraSpaces.entries()) {
   const seongsu = sp.slug === "seongsu-01";
   out.push(
-    `INSERT INTO spaces (name, district, neighborhood, slug, owner_consent, consent_file_key, location_notes, owner_token, margin_pct, scale_factor, created_at) VALUES (${q(sp.name)}, ${q(sp.district)}, ${q(sp.neighborhood)}, ${q(sp.slug)}, ${sp.consent}, NULL, ${q(seongsu ? "성수역 3번 출구 도보 4분, 카페 골목 초입, 주말 유동인구 많음" : null)}, ${q(seongsu ? "p".repeat(32) : null)}, ${seongsu ? 18 : "NULL"}, 1, ${now - (18 - k) * day});`,
+    `INSERT INTO spaces (name, district, neighborhood, slug, owner_consent, consent_file_key, location_notes, margin_pct, scale_factor, created_at) VALUES (${q(sp.name)}, ${q(sp.district)}, ${q(sp.neighborhood)}, ${q(sp.slug)}, ${sp.consent}, NULL, ${q(seongsu ? "성수역 3번 출구 도보 4분, 카페 골목 초입, 주말 유동인구 많음" : null)}, ${seongsu ? 18 : "NULL"}, 1, ${now - (18 - k) * day});`,
   );
   const picks: string[][] = Array.from({ length: sp.total }, () => []);
   let offset = 0;
@@ -201,6 +207,14 @@ for (const [month, revenueManwon, profitManwon] of [
 }
 out.push(
   `INSERT INTO educator_links (application_id, organization, educator_name, connected_on, created_at) VALUES (${byName("최예시")}, '성동구 창업지원센터', '박멘토', '2026-11-03', ${now});`,
+);
+
+// Owner account: owns seongsu-01 and has one pending (not yet public) owner-registered space.
+const ownerId = "(SELECT id FROM owners WHERE email = 'owner@ssulmo.local')";
+out.push(
+  `UPDATE spaces SET owner_id = ${ownerId} WHERE slug = 'seongsu-01';`,
+  `INSERT INTO spaces (name, district, neighborhood, slug, owner_consent, location_notes, owner_id, status, created_at) VALUES ('금호동 역세권 1층', '성동구', '성동구 금호동', 'space-seed0001', 1, '금호역 2번 출구 앞, 대로변 코너', ${ownerId}, 'pending', ${now - day});`,
+  `INSERT INTO candidate_marks (owner_id, application_id, starred, memo, updated_at) VALUES (${ownerId}, ${byName("최예시")}, 1, '인테리어를 직접 한다고 함. 다음 주 공인중개사 통해 미팅 잡기.', ${now - 2 * 60 * 60 * 1000});`,
 );
 
 console.log(out.join("\n"));

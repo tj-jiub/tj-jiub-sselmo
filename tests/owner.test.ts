@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { createTestDb } from "./helpers/d1";
 import { createSpace, getSpace, parseSpaceSettings, saveSpaceSettings } from "~/lib/spaces.server";
-import { ensureOwnerToken, getOwnerView, listShortlist, regenerateOwnerToken } from "~/lib/owner.server";
+import { getSpaceDemand, listShortlist } from "~/lib/owner.server";
+import { upsertOwner } from "~/lib/owner-auth.server";
+import { listOwnerCandidates } from "~/lib/marks.server";
 
 const fd = (o: Record<string, string>) => { const f = new FormData(); for (const [k, v] of Object.entries(o)) f.set(k, v); return f; };
 
@@ -30,8 +32,14 @@ describe("space settings", () => {
 
 async function world() {
   const db = createTestDb();
-  const spaceId = await createSpace(db, { name: "성수 공실", district: "성동구", neighborhood: "성동구 성수동", slug: "ss-01", ownerConsent: true, consentFileKey: null });
-  const other = await createSpace(db, { name: "다른 공실", district: "성동구", neighborhood: "성동구 금호동", slug: "gh-01", ownerConsent: true, consentFileKey: null });
+  const owner = await upsertOwner(db, "owner@x.kr", 1);
+  const mkSpace = async (name: string, hood: string, slug: string) => {
+    const id = await createSpace(db, { name, district: "성동구", neighborhood: hood, slug, ownerConsent: true, consentFileKey: null });
+    await db.prepare("UPDATE spaces SET owner_id = ? WHERE id = ?").bind(owner.id, id).run();
+    return id;
+  };
+  const spaceId = await mkSpace("성수 공실", "성동구 성수동", "ss-01");
+  const other = await mkSpace("다른 공실", "성동구 금호동", "gh-01");
   for (let i = 0; i < 60; i++) {
     const a = { businessTypes: i < 40 ? ["카페"] : ["베이커리"], businessTypeOther: null, visitFrequency: "weekly1", spendRange: "5to10k", visitTime: "lunch", respondentType: "resident" };
     await db.prepare("INSERT INTO survey_responses (space_id, answers, device_hash, created_at) VALUES (?, ?, ?, 1)").bind(spaceId, JSON.stringify(a), `d${i}`).run();
@@ -45,62 +53,45 @@ async function world() {
         track, ai_status, ai_score, ai_report, created_at) VALUES (?, ?, ?, '비밀계획원문', 3000, '김비밀${n}', 'secret${n}@example.com', 1, 1, ?, ?, ?, ?, ?)`,
     ).bind(sp, `tok${n}`, `업종${n}`, track, status, score, report, at).run();
   };
-  return { db, spaceId, other, add };
+  return { db, owner, spaceId, other, add };
 }
 
-describe("owner token", () => {
-  it("is created once, then regenerated; the old link stops working", async () => {
-    const { db, spaceId } = await world();
-    const t1 = await ensureOwnerToken(db, spaceId);
-    expect(t1).toMatch(/^[0-9a-f]{32}$/);
-    expect(await ensureOwnerToken(db, spaceId)).toBe(t1);
-    expect(await getOwnerView(db, t1)).not.toBeNull();
-    const t2 = await regenerateOwnerToken(db, spaceId);
-    expect(t2).not.toBe(t1);
-    expect(await getOwnerView(db, t1)).toBeNull();
-    expect(await getOwnerView(db, t2)).not.toBeNull();
-    expect(await getOwnerView(db, "")).toBeNull();
-  });
-});
-
-describe("owner view", () => {
+// These replace the privacy/limit assertions of the removed /o/:token page: the same rules now hold on the owner candidates page.
+describe("owner candidates page data", () => {
   it("goes dark when the building-owner consent is withdrawn", async () => {
-    const { db, spaceId } = await world();
-    const token = await ensureOwnerToken(db, spaceId);
-    expect(await getOwnerView(db, token)).not.toBeNull();
+    const { db, owner, spaceId, add } = await world();
+    await add(spaceId, 90, "done");
+    expect(await listOwnerCandidates(db, owner.id, spaceId)).toHaveLength(1);
     await db.prepare("UPDATE spaces SET owner_consent = 0 WHERE id = ?").bind(spaceId).run();
-    expect(await getOwnerView(db, token)).toBeNull();
+    expect(await listOwnerCandidates(db, owner.id, spaceId)).toEqual([]);
   });
 
   it("shows at most 5 candidates scoring >= 60, best first, from this space only", async () => {
-    const { db, spaceId, other, add } = await world();
+    const { db, owner, spaceId, other, add } = await world();
     for (const s of [95, 90, 85, 80, 75, 70, 65]) await add(spaceId, s, "done");
     await add(spaceId, 59, "done");
     await add(spaceId, null, "pending");
     await add(spaceId, 99, "failed");
     await add(other, 100, "done");
-    const view = (await getOwnerView(db, await ensureOwnerToken(db, spaceId)))!;
-    expect(view.candidates.map((c) => c.score)).toEqual([95, 90, 85, 80, 75]);
-    expect(view.candidates[0]).toMatchObject({ rank: 1, strengths: ["강점"], risks: ["위험"], track: "general", estCostManwon: 3000 });
-    expect(view.space).toMatchObject({ name: "성수 공실", neighborhood: "성동구 성수동" });
+    const list = (await listOwnerCandidates(db, owner.id, spaceId))!;
+    expect(list.map((c) => c.score)).toEqual([95, 90, 85, 80, 75]);
+    expect(list[0]).toMatchObject({ rank: 1, strengths: ["강점"], risks: ["위험"], track: "general", estCostManwon: 3000 });
   });
 
   it("never exposes name, email or plan text", async () => {
-    const { db, spaceId, add } = await world();
+    const { db, owner, spaceId, add } = await world();
     await add(spaceId, 90, "done", "ssulmo");
-    const view = await getOwnerView(db, await ensureOwnerToken(db, spaceId));
-    const json = JSON.stringify(view);
+    const json = JSON.stringify(await listOwnerCandidates(db, owner.id, spaceId));
+    expect(json).toContain("업종1");
     for (const secret of ["김비밀", "secret", "example.com", "비밀계획원문", "tok1"]) expect(json).not.toContain(secret);
   });
 
   it("explains the demand with the fixed phrase only after 50 responses", async () => {
-    const { db, spaceId, other, add } = await world();
-    await add(spaceId, 90, "done");
-    const ready = (await getOwnerView(db, await ensureOwnerToken(db, spaceId)))!;
-    expect(ready.demand).toMatchObject({ ready: true, total: 60 });
-    expect(ready.demand.top[0]).toEqual({ type: "카페", count: 40, phrase: "응답자 60명 중 40명이 이용 의향" });
-    const pending = (await getOwnerView(db, await ensureOwnerToken(db, other)))!;
-    expect(pending.demand).toEqual({ ready: false, total: 0, top: [] });
+    const { db, spaceId, other } = await world();
+    const ready = await getSpaceDemand(db, spaceId);
+    expect(ready).toMatchObject({ ready: true, total: 60 });
+    expect(ready.top[0]).toEqual({ type: "카페", count: 40, phrase: "응답자 60명 중 40명이 이용 의향" });
+    expect(await getSpaceDemand(db, other)).toEqual({ ready: false, total: 0, top: [] });
   });
 
   it("listShortlist is the admin preview (includes the track)", async () => {

@@ -1,7 +1,10 @@
 import { execFileSync } from "node:child_process";
 import { beforeAll, describe, expect, it } from "vitest";
 import { listConsultingMonths, listEducatorLinks } from "~/lib/consulting.server";
-import { getOwnerView, listShortlist } from "~/lib/owner.server";
+import { listShortlist } from "~/lib/owner.server";
+import { listOwnerCandidates, getMarkForApplication } from "~/lib/marks.server";
+import { getOwnedSpace, listOwnerSpaces } from "~/lib/owner-spaces.server";
+import { getPublicSpace } from "~/lib/spaces.server";
 import { migratedSqlite, wrapSqlite } from "./helpers/d1";
 
 let sqlite: ReturnType<typeof migratedSqlite>;
@@ -16,9 +19,27 @@ beforeAll(() => {
 }, 30_000);
 
 describe("seed script", () => {
-  it("gives mangwon-01 and seongsu-01 fixed owner tokens", async () => {
-    expect(await getOwnerView(db, "o".repeat(32))).toMatchObject({ space: { name: "망원동 1층 코너 공실" } });
-    expect(await getOwnerView(db, "p".repeat(32))).toMatchObject({ space: { name: "성수동 골목 1층 공실" } });
+  it("gives the seed owner seongsu-01 plus one pending space that is not public", async () => {
+    const owner = sqlite.prepare("SELECT id FROM owners WHERE email = 'owner@ssulmo.local'").get() as { id: number };
+    const cards = await listOwnerSpaces(db, owner.id);
+    expect(cards.map((c) => [c.slug, c.stage])).toEqual([
+      ["space-seed0001", "pending"],
+      ["seongsu-01", "evaluated"],
+    ]);
+    expect(await getOwnedSpace(db, owner.id, spaceId("mangwon-01"))).toBeNull();
+    expect(await getPublicSpace(db, "space-seed0001")).toBeNull();
+    expect(await getPublicSpace(db, "seongsu-01")).not.toBeNull();
+  });
+
+  it("seeds one ★ + memo on a seongsu-01 shortlist candidate, visible to the owner and the admin", async () => {
+    const owner = sqlite.prepare("SELECT id FROM owners WHERE email = 'owner@ssulmo.local'").get() as { id: number };
+    const list = (await listOwnerCandidates(db, owner.id, spaceId("seongsu-01")))!;
+    expect(list).toHaveLength(5);
+    const starred = list.filter((c) => c.starred);
+    expect(starred).toHaveLength(1);
+    expect(starred[0].memo).toContain("공인중개사");
+    expect(await getMarkForApplication(db, starred[0].id)).toMatchObject({ starred: true });
+    expect(JSON.stringify(list)).not.toMatch(/예시|example\.com/);
   });
 
   it("shows at most 5 anonymous candidates for seongsu-01 and some for mangwon-01", async () => {

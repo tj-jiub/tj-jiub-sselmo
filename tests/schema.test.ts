@@ -9,9 +9,13 @@ describe("schema", () => {
       .all<{ name: string }>();
     expect(results.map((r) => r.name)).toEqual([
       "applications",
+      "auth_attempts",
       "broker_intros",
+      "candidate_marks",
       "consulting_months",
       "educator_links",
+      "owner_login_tokens",
+      "owners",
       "spaces",
       "survey_contacts",
       "survey_responses",
