@@ -16,6 +16,9 @@ export type Space = {
   photo_keys: string | null;
   /** R2 key of the cover photo (one of photo_keys); null = none. */
   cover_key: string | null;
+  /** Owner's proposed photo list / cover for an active space, waiting for the operator; null = none. */
+  pending_photo_keys: string | null;
+  pending_cover_key: string | null;
   margin_pct: number | null;
   scale_factor: number;
   created_at: number;

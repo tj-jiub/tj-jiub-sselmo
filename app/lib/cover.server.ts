@@ -1,5 +1,5 @@
 import { resolveCoverKey } from "./cover.ts";
-import { addSpacePhotos, getOwnedSpace, setCoverKey } from "./owner-spaces.server.ts";
+import { addSpacePhotos, getOwnedSpace, ownerPhotoState, setCoverKey } from "./owner-spaces.server.ts";
 import { checkPhotos, MAX_PHOTOS, photoContentType, storeUpload } from "./uploads.server.ts";
 import type { Space } from "./spaces.server.ts";
 import { getPublicSpace } from "./spaces.server.ts";
@@ -34,7 +34,10 @@ export async function publicCoverResponse(env: { DB: D1Database; UPLOADS: R2Buck
   return streamImage(env.UPLOADS, resolveCoverKey(photoKeysOf(space), space.cover_key), "public, max-age=3600");
 }
 
-/** The owner's own photo: the cover when `index` is null, otherwise the photo at that position. Other owners' ids give 404. */
+/**
+ * The owner's own photo: the cover when `index` is null, otherwise the photo at that position. Owners see
+ * their staged proposal (if any) — the public cover keeps the published one. Other owners' ids give 404.
+ */
 export async function ownerPhotoResponse(
   env: { DB: D1Database; UPLOADS: R2Bucket },
   ownerId: number,
@@ -43,8 +46,8 @@ export async function ownerPhotoResponse(
 ): Promise<Response> {
   const space = await getOwnedSpace(env.DB, ownerId, spaceId);
   if (!space) return notFound();
-  const keys = photoKeysOf(space);
-  const key = index === null ? resolveCoverKey(keys, space.cover_key) : (keys[index] ?? null);
+  const { keys, cover } = ownerPhotoState(space);
+  const key = index === null ? cover : (keys[index] ?? null);
   return streamImage(env.UPLOADS, key, "private, no-store");
 }
 
@@ -66,7 +69,7 @@ export async function applyPhotosForm(
   const checked = checkPhotos(form.getAll("photos"));
   if (!checked.ok) return { ok: false, status: 400, error: checked.error };
   if (checked.value.length === 0) return { ok: false, status: 400, error: "올릴 사진을 골라 주세요." };
-  const room = MAX_PHOTOS - photoKeysOf(space).length;
+  const room = MAX_PHOTOS - ownerPhotoState(space).keys.length;
   if (checked.value.length > room) {
     return { ok: false, status: 400, error: room > 0 ? `사진은 ${room}장만 더 올릴 수 있어요. (최대 ${MAX_PHOTOS}장)` : `사진은 최대 ${MAX_PHOTOS}장까지 올릴 수 있어요.` };
   }

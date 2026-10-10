@@ -15,7 +15,8 @@ const CARDS = ["pendingSpaces", "unmailed", "aiFailed", "revenueMissing"] as con
 function expectedCounts() {
   const [row] = dbRows<Record<(typeof CARDS)[number], number>>(
     `SELECT
-      (SELECT COUNT(*) FROM spaces WHERE status = 'pending') AS pendingSpaces,
+      (SELECT COUNT(*) FROM spaces WHERE status = 'pending'
+         OR (status = 'active' AND (pending_photo_keys IS NOT NULL OR pending_cover_key IS NOT NULL))) AS pendingSpaces,
       (SELECT COUNT(*) FROM applications WHERE ai_status = 'done' AND result_mailed_at IS NULL) AS unmailed,
       (SELECT COUNT(*) FROM applications WHERE ai_status = 'failed') AS aiFailed,
       (SELECT COUNT(*) FROM applications a WHERE a.track = 'ssulmo' AND a.consent_consulting_at IS NOT NULL
@@ -35,6 +36,8 @@ async function shownCounts(page: Page) {
 }
 
 test("A1 shows the four counts from the database; the side menu has the four items", async ({ page }) => {
+  // The poll below can use its full 30s while parallel specs churn the counts; leave room for the rest.
+  test.setTimeout(90_000);
   await adminLogin(page);
   // Other specs may create rows while this one runs: retry until UI and database agree.
   await expect.poll(async () => JSON.stringify(await shownCounts(page)) === JSON.stringify(expectedCounts()), { timeout: 30_000 }).toBe(true);

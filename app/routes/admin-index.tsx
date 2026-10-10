@@ -3,7 +3,7 @@ import type { Route } from "./+types/admin-index";
 import { requireAdmin } from "~/lib/auth.server";
 import { adminTodoCounts, listAdminSpaces } from "~/lib/admin-todo.server";
 import { moderateSpace } from "~/lib/admin-lists.server";
-import { listPendingSpaces } from "~/lib/owner-spaces.server";
+import { approvePhotoChange, listPendingSpaces, listPhotoReviews, rejectPhotoChange } from "~/lib/owner-spaces.server";
 import { adminFileUrl } from "~/lib/cover";
 import { SpaceAvatar } from "~/components/SpaceAvatar";
 import { AdminPage, adminDate, CountNumber } from "~/components/admin";
@@ -17,6 +17,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   return {
     counts: await adminTodoCounts(env.DB, now),
     pending: (await listPendingSpaces(env.DB)).map((p) => ({ ...p, coverKey: covers.get(p.id) ?? p.photoKeys[0] ?? null })),
+    photoReviews: await listPhotoReviews(env.DB),
     today: new Date(now).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul", month: "long", day: "numeric", weekday: "long" }),
   };
 }
@@ -24,15 +25,29 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 export async function action({ request, context }: Route.ActionArgs) {
   const env = context.cloudflare.env;
   await requireAdmin(request, env);
-  const failure = await moderateSpace(env.DB, await request.formData());
+  const form = await request.formData();
+  const intent = form.get("intent");
+  if (intent === "photo-approve" || intent === "photo-reject") {
+    const spaceId = Number(form.get("spaceId"));
+    if (intent === "photo-approve") {
+      if (!(await approvePhotoChange(env.DB, spaceId))) return data({ error: "확인할 사진 변경이 없어요." }, { status: 400 });
+    } else {
+      const res = await rejectPhotoChange(env.DB, spaceId);
+      if (!res.ok) return data({ error: "확인할 사진 변경이 없어요." }, { status: 400 });
+      // Newly uploaded photos that were never published are dropped from storage.
+      await Promise.all(res.orphanKeys.map((k) => env.UPLOADS.delete(k)));
+    }
+    return { error: null };
+  }
+  const failure = await moderateSpace(env.DB, form);
   if (failure) return data({ error: failure.error }, { status: failure.status });
   return { error: null };
 }
 
 export default function AdminIndex({ loaderData, actionData }: Route.ComponentProps) {
-  const { counts, pending, today } = loaderData;
+  const { counts, pending, photoReviews, today } = loaderData;
   const cards = [
-    { key: "pendingSpaces", to: "/admin/spaces?status=pending", n: counts.pendingSpaces, unit: "곳", title: "공실 승인 대기", hint: "건물주가 등록했어요" },
+    { key: "pendingSpaces", to: "/admin/spaces?status=pending", n: counts.pendingSpaces, unit: "곳", title: "공실 승인 대기", hint: "새 공실과 사진 변경" },
     { key: "unmailed", to: "/admin/applications?status=mail", n: counts.unmailed, unit: "건", title: "결과 메일 안 보냄", hint: "평가는 끝났어요" },
     { key: "aiFailed", to: "/admin/applications?status=failed", n: counts.aiFailed, unit: "건", title: "AI 평가 실패", hint: "재평가가 필요해요" },
     { key: "revenueMissing", to: "/admin/applications?status=revenue", n: counts.revenueMissing, unit: "건", title: "이번 달 매출 미기록", hint: "쓸모 트랙" },
@@ -69,6 +84,52 @@ export default function AdminIndex({ loaderData, actionData }: Route.ComponentPr
           </Link>
         ))}
       </div>
+
+      {photoReviews.length > 0 && (
+        <Section title={`사진 변경 확인 ${photoReviews.length}곳`}>
+          <p className="mb-3 text-[15px] text-muted">이미 공개된 공실의 사진이에요. 승인하기 전까지는 예전 대표 사진이 그대로 보여요.</p>
+          <ul className="divide-y divide-line">
+            {photoReviews.map((r) => (
+              <li key={r.id} data-testid="photo-review" className="flex flex-wrap items-center gap-4 py-4 text-base">
+                <SpaceAvatar src={r.currentCover ? adminFileUrl(r.currentCover) : null} name={r.name} neighborhood={r.neighborhood} size={56} />
+                <span aria-hidden="true" className="text-muted">→</span>
+                <SpaceAvatar src={r.proposedCover ? adminFileUrl(r.proposedCover) : null} name={r.name} neighborhood={r.neighborhood} size={56} />
+                <div className="min-w-0 flex-1">
+                  <p>
+                    <Link to={`/admin/spaces/${r.id}`} className="font-medium underline-offset-4 hover:underline">
+                      {r.name}
+                    </Link>
+                  </p>
+                  <p className="text-[15px] text-muted">
+                    {r.neighborhood} · 건물주 {r.ownerName ?? "이름 없음"} · {r.newKeys.length > 0 ? `새 사진 ${r.newKeys.length}장` : "대표 사진만 변경"}
+                  </p>
+                  {r.newKeys.length > 0 && (
+                    <p className="text-[15px]">
+                      {r.newKeys.map((k, i) => (
+                        <a key={k} className="mr-3 underline" href={adminFileUrl(k)}>
+                          새 사진 {i + 1}
+                        </a>
+                      ))}
+                    </p>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Form method="post">
+                    <input type="hidden" name="spaceId" value={r.id} />
+                    <input type="hidden" name="intent" value="photo-approve" />
+                    <button className={btnSmall}>승인</button>
+                  </Form>
+                  <Form method="post">
+                    <input type="hidden" name="spaceId" value={r.id} />
+                    <input type="hidden" name="intent" value="photo-reject" />
+                    <button className={btnSmallGhost}>반려</button>
+                  </Form>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </Section>
+      )}
 
       <Section title={`승인 대기 공실 ${pending.length}곳`}>
         {pending.length === 0 ? (

@@ -34,3 +34,8 @@
 ## 5. Testing
 - Unit (TDD): digit helper, todo counts, stage/next-action helpers, cover-route gating (pending/rejected/unconsented → 404), cover default and change.
 - E2E: A1 shows the four counts matching seed; clicking a card opens the filtered list; A3 shows the next-action box; owner can change cover and it appears on the admin list; `/media/space/:slug/cover` 404s for a pending space; ticker shows final digits with reduced motion. Keep all existing tests green on **Windows and Linux** (use shell-safe commands; wait for navigations/POSTs before reading other pages; don't share mutable seed rows across parallel specs).
+
+## 6. Change (user decision, 2026-10-10): photo changes on public spaces need operator approval
+- On an `active` space, an owner's added photos and cover changes are **staged** (`pending_photo_keys`, `pending_cover_key`, migration `0007_photo_review.sql`); the public cover keeps the last approved photo. Pending spaces still change directly (the whole space is under review).
+- Owners see their own proposal plus a notice ("운영자 확인 중"). Admin home lists "사진 변경 확인" (current → proposed cover, new photos) with approve/reject; rejecting deletes the never-published uploads from R2. The "공실 승인 대기" to-do count includes these.
+

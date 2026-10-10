@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createTestDb } from "./helpers/d1";
 import { upsertOwner } from "~/lib/owner-auth.server";
-import { addSpacePhotos, createOwnerSpace, getOwnedSpace, listOwnerSpaces, setCoverKey } from "~/lib/owner-spaces.server";
+import { addSpacePhotos, approvePhotoChange, createOwnerSpace, getOwnedSpace, listOwnerSpaces, setCoverKey } from "~/lib/owner-spaces.server";
 import { ownerPhotoResponse, publicCoverResponse } from "~/lib/cover.server";
 import { MAX_PHOTOS } from "~/lib/uploads.server";
 
@@ -128,7 +128,10 @@ describe("publicCoverResponse", () => {
     expect(res.headers.get("Content-Type")).toBe("image/png");
     expect(res.headers.get("Cache-Control")).toBe("public, max-age=3600");
     expect(res.headers.get("X-Content-Type-Options")).toBe("nosniff");
+    // On a public space the new cover waits for the operator, then goes live.
     await setCoverKey(db, owner.id, id, "owner-photos/b.jpg");
+    expect((await publicCoverResponse({ DB: db, UPLOADS: bucket(objects) }, slug)).headers.get("Content-Type")).toBe("image/png");
+    await approvePhotoChange(db, id);
     expect((await publicCoverResponse({ DB: db, UPLOADS: bucket(objects) }, slug)).headers.get("Content-Type")).toBe("image/jpeg");
   });
   it("404s without a cover, a missing object, or a non-image content type", async () => {

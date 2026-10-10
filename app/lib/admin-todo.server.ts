@@ -14,7 +14,11 @@ const count = async (db: D1Database, sql: string, ...params: Array<string | numb
 export type AdminTodoCounts = { pendingSpaces: number; unmailed: number; aiFailed: number; revenueMissing: number; total: number };
 
 export async function adminTodoCounts(db: D1Database, now: number): Promise<AdminTodoCounts> {
-  const pendingSpaces = await count(db, "SELECT COUNT(*) AS n FROM spaces WHERE status = 'pending'");
+  // New owner spaces plus photo changes waiting on an already-public space.
+  const pendingSpaces = await count(
+    db,
+    "SELECT COUNT(*) AS n FROM spaces WHERE status = 'pending' OR (status = 'active' AND (pending_photo_keys IS NOT NULL OR pending_cover_key IS NOT NULL))",
+  );
   const unmailed = await count(db, "SELECT COUNT(*) AS n FROM applications WHERE ai_status = 'done' AND result_mailed_at IS NULL");
   const aiFailed = await count(db, "SELECT COUNT(*) AS n FROM applications WHERE ai_status = 'failed'");
   const revenueMissing = await count(
