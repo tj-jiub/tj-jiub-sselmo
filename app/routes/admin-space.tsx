@@ -13,7 +13,13 @@ import { listAnswers, listContacts } from "~/lib/surveys.server";
 import { aggregate, distribution, formatIntent, PUBLIC_THRESHOLD } from "~/lib/report";
 import { RESPONDENT_TYPE, SPEND_RANGE, VISIT_FREQUENCY, VISIT_TIME } from "~/lib/survey";
 import { QrDownload } from "~/components/QrDownload";
-import { btnSmall, btnSmallGhost, ErrorNote, Section, Shell, Title } from "~/components/ui";
+import { SpaceAvatar } from "~/components/SpaceAvatar";
+import { AdminPage, Fold, NextBox } from "~/components/admin";
+import { ProgressBar } from "~/components/NumberTicker";
+import { spaceStage, nextAction } from "~/lib/admin-stage";
+import { moderateSpace, spaceCoverKey } from "~/lib/admin-lists.server";
+import { adminFileUrl } from "~/lib/cover";
+import { btnSmall, btnSmallGhost, ErrorNote, Section } from "~/components/ui";
 
 export async function loader({ request, params, context }: Route.LoaderArgs) {
   const env = context.cloudflare.env;
@@ -37,6 +43,7 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
     owner: await getSpaceOwner(env.DB, space.id),
     marks: Object.fromEntries(await listMarksForSpace(env.DB, space.id)),
     photoKeys: space.photo_keys ? (JSON.parse(space.photo_keys) as string[]) : [],
+    coverKey: spaceCoverKey(space),
   };
 }
 
@@ -46,6 +53,12 @@ export async function action({ request, params, context }: Route.ActionArgs) {
   const form = await request.formData();
   const id = Number(params.id);
   const intent = form.get("intent");
+  if (intent === "approve" || intent === "reject") {
+    form.set("spaceId", String(id));
+    const failure = await moderateSpace(env.DB, form);
+    if (failure) return data({ error: failure.error, saved: null }, { status: failure.status });
+    return { error: null, saved: String(intent) };
+  }
   if (intent === "set-consent") {
     await setOwnerConsent(env.DB, id, form.get("consent") === "1");
   } else if (intent === "save-settings") {
@@ -60,48 +73,60 @@ export async function action({ request, params, context }: Route.ActionArgs) {
 const field = "w-full rounded-[10px] border border-line px-3 py-2.5 focus:border-ink focus:outline-none";
 
 export default function AdminSpace({ loaderData, actionData }: Route.ComponentProps) {
-  const { space, origin, report, breakdowns, contacts, demand, candidates, owner, marks, photoKeys } = loaderData;
+  const { space, origin, report, breakdowns, contacts, demand, candidates, owner, marks, photoKeys, coverKey } = loaderData;
   const consented = space.owner_consent === 1;
   const isPublic = space.status === "active" && consented;
   // Owner-registered spaces go live through the queue on /admin, not through the consent toggle.
   const awaitingApproval = space.owner_id !== null && space.status !== "active";
   const surveyUrl = `${origin}/s/${space.slug}`;
   const est = demand.estimate;
+  const stage = spaceStage({ status: space.status, owner_consent: space.owner_consent, response_count: report.total, candidate_count: candidates.length });
+  const next = nextAction({ kind: "space", status: space.status, owner_consent: space.owner_consent, response_count: report.total, candidate_count: candidates.length });
 
   return (
-    <Shell wide nav={false}>
-      <Title eyebrow={space.neighborhood}>{space.name}</Title>
-      <ErrorNote message={actionData?.error} />
-
-      <Section title="상태">
-        <p className="text-base">
-          <span className="rounded-full border border-line px-2.5 py-0.5 text-[15px] font-bold">{spaceStatusLabel(space)}</span>
-          {space.status === "rejected" && space.reject_reason && <span className="ml-3">반려 사유: {space.reject_reason}</span>}
-        </p>
-        {owner && (
-          <dl className="mt-4 grid grid-cols-[6rem_1fr] gap-y-1.5 text-base">
-            <dt className="text-muted">건물주 (개인정보)</dt>
-            <dd className="break-all">
-              {owner.name ?? "이름 없음"} · {owner.email}
-              {owner.phone ? ` · ${owner.phone}` : ""}
-            </dd>
-            <dt className="text-muted">등록 사진</dt>
-            <dd>
-              {photoKeys.length === 0
-                ? "없음"
-                : photoKeys.map((k, i) => (
-                    <a key={k} className="mr-3 underline" href={`/admin/files/${k}`}>
-                      사진 {i + 1}
-                    </a>
-                  ))}
-            </dd>
-          </dl>
-        )}
-      </Section>
-
-      <div className="grid gap-x-10 md:grid-cols-2">
+    <AdminPage>
+      <div className="flex items-center gap-4">
+        <SpaceAvatar src={coverKey ? adminFileUrl(coverKey) : null} name={space.name} neighborhood={space.neighborhood} size={56} />
         <div className="min-w-0">
-          <Section title="위치 정보 (AI 평가에 쓰여요)">
+          <p className="text-[15px] font-medium text-muted">
+            {space.neighborhood} · {owner ? `건물주 ${owner.name ?? "이름 없음"}` : "운영자 등록"}
+          </p>
+          <h1 className="text-[26px] font-bold lg:text-[32px]">{space.name}</h1>
+        </div>
+      </div>
+      <p className="mt-4 text-base">
+        <span data-testid="space-stage" className="rounded-full border border-line px-2.5 py-0.5 text-[15px] font-bold">
+          {stage.label}
+        </span>
+        <span className="ml-3 text-[15px] text-muted">{stage.detail}</span>
+        {space.status === "rejected" && space.reject_reason && <span className="ml-3">반려 사유: {space.reject_reason}</span>}
+      </p>
+      {stage.progress && (
+        <div className="mt-2 max-w-xs">
+          <ProgressBar value={stage.progress.value} max={stage.progress.max} label={stage.detail} />
+        </div>
+      )}
+      <ErrorNote message={actionData?.error} />
+      {actionData?.saved === "approve" && <p className="mt-3 text-base text-muted">승인했어요.</p>}
+      {actionData?.saved === "reject" && <p className="mt-3 text-base text-muted">반려했어요.</p>}
+      {next && (
+        <NextBox title={next.title} hint={next.hint}>
+          <Form method="post">
+            <input type="hidden" name="intent" value="approve" />
+            <button className={btnSmall}>승인</button>
+          </Form>
+          <Form method="post" className="flex flex-wrap items-center gap-2">
+            <input type="hidden" name="intent" value="reject" />
+            <input name="reason" maxLength={200} placeholder="반려 사유 (선택)" aria-label="반려 사유" className="min-h-10 w-56 max-w-full rounded-[10px] border border-line bg-paper px-3 py-2" />
+            <button className={btnSmallGhost}>반려</button>
+          </Form>
+        </NextBox>
+      )}
+
+      <div className="mt-8" />
+      <div>
+        <div className="min-w-0">
+          <Fold title="위치 정보 · 예상 매출 설정 (AI 평가에 쓰여요)" open={actionData?.saved === "settings" || Boolean(actionData?.error)}>
             <Form method="post" className="space-y-4 text-base">
               <input type="hidden" name="intent" value="save-settings" />
               <label className="block">
@@ -137,7 +162,7 @@ export default function AdminSpace({ loaderData, actionData }: Route.ComponentPr
                 <p className="text-muted">집계 중이에요. 응답 {PUBLIC_THRESHOLD}건부터 보여요. (현재 {demand.total}건)</p>
               )}
             </div>
-          </Section>
+          </Fold>
         </div>
         <div className="min-w-0">
           <Section title="현재 후보 (60점 이상 상위 5명)">
@@ -181,7 +206,7 @@ export default function AdminSpace({ loaderData, actionData }: Route.ComponentPr
         <div className="flex flex-wrap items-center justify-between gap-3 text-base">
           <p>
             {awaitingApproval
-              ? `건물주가 직접 등록한 공실이에요. 지금은 ${spaceStatusLabel(space)} 상태라 비공개예요. 공개는 대시보드의 '확인 대기 공실'에서 승인해야 해요.`
+              ? `건물주가 직접 등록한 공실이에요. 지금은 ${spaceStatusLabel(space)} 상태라 비공개예요. 공개는 위의 '다음 할 일'이나 할 일 화면에서 승인해야 해요.`
               : isPublic
                 ? "동의 완료 — 링크가 공개돼 있어요."
                 : "동의 전 — 설문·리포트·신청 링크가 모두 비공개예요."}
@@ -213,7 +238,7 @@ export default function AdminSpace({ loaderData, actionData }: Route.ComponentPr
         </ul>
       </Section>
 
-      <Section title={`수요 리포트 · 응답 ${report.total}건`}>
+      <Fold title={`수요 리포트 · 응답 ${report.total}건`}>
         {report.total < PUBLIC_THRESHOLD && (
           <p className="mb-3 text-[15px] text-muted">
             공개 요약은 응답 {PUBLIC_THRESHOLD}건부터 열려요. (현재 {report.total}건)
@@ -254,9 +279,31 @@ export default function AdminSpace({ loaderData, actionData }: Route.ComponentPr
             </div>
           ))}
         </div>
-      </Section>
+      </Fold>
 
-      <Section title={`소식 받기 연락처 ${contacts.length}건 (개인정보)`}>
+      {owner && (
+        <Fold title="건물주 · 등록 사진 (개인정보)">
+          <dl className="grid grid-cols-[6rem_1fr] gap-y-1.5 text-base">
+            <dt className="text-muted">건물주</dt>
+            <dd className="break-all">
+              {owner.name ?? "이름 없음"} · {owner.email}
+              {owner.phone ? ` · ${owner.phone}` : ""}
+            </dd>
+            <dt className="text-muted">등록 사진</dt>
+            <dd>
+              {photoKeys.length === 0
+                ? "없음"
+                : photoKeys.map((k, i) => (
+                    <a key={k} className="mr-3 underline" href={adminFileUrl(k)}>
+                      사진 {i + 1}
+                    </a>
+                  ))}
+            </dd>
+          </dl>
+        </Fold>
+      )}
+
+      <Fold title={`소식 받기 연락처 ${contacts.length}건 (개인정보)`}>
         <ul className="text-base">
           {contacts.map((c, i) => (
             <li key={i} className="py-1">
@@ -264,11 +311,11 @@ export default function AdminSpace({ loaderData, actionData }: Route.ComponentPr
             </li>
           ))}
         </ul>
-      </Section>
+      </Fold>
 
-      <Link to="/admin" className="text-base text-muted underline">
-        ← 목록으로
+      <Link to="/admin/spaces" className="text-base text-muted underline">
+        ← 공실 목록으로
       </Link>
-    </Shell>
+    </AdminPage>
   );
 }

@@ -1,22 +1,15 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router";
+import { NumberTicker } from "~/components/NumberTicker";
 
 /** Content frame inside the admin shell (the shell already provides the nav). */
 export function AdminPage({ children }: { children: ReactNode }) {
   return <main className="mx-auto w-full max-w-[1100px] px-4 py-8 lg:px-10 lg:py-12">{children}</main>;
 }
 
-/**
- * Big count on the 할 일 cards. Plain number for now; the lead swaps NumberTicker in here
- * (one place) once the ticker branch is merged.
- */
+/** Big count on the 할 일 cards (rolling digits; final value without JS or with reduced motion). */
 export function CountNumber({ value, unit }: { value: number; unit: string }) {
-  return (
-    <span className="font-mono text-[44px] leading-none font-medium tabular-nums">
-      {value.toLocaleString("ko-KR")}
-      <span className="ml-1 font-sans text-[18px] font-medium">{unit}</span>
-    </span>
-  );
+  return <NumberTicker value={value} unit={unit} className="text-[44px] font-medium" />;
 }
 
 export function Chip({ to, on, children }: { to: string; on: boolean; children: ReactNode }) {
@@ -28,14 +21,6 @@ export function Chip({ to, on, children }: { to: string; on: boolean; children: 
     >
       {children}
     </Link>
-  );
-}
-
-export function ProgressBar({ value, max }: { value: number; max: number }) {
-  return (
-    <div className="h-1.5 overflow-hidden rounded-[3px] bg-line" role="progressbar" aria-valuemin={0} aria-valuemax={max} aria-valuenow={value}>
-      <i className="block h-full bg-green-deep" style={{ width: `${Math.round((value / max) * 100)}%` }} />
-    </div>
   );
 }
 

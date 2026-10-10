@@ -4,7 +4,8 @@ import { requireAdmin } from "~/lib/auth.server";
 import { listAdminSpaces } from "~/lib/admin-todo.server";
 import { adminFileUrl } from "~/lib/cover";
 import { SpaceAvatar } from "~/components/SpaceAvatar";
-import { AdminPage, Chip, ProgressBar } from "~/components/admin";
+import { AdminPage, Chip } from "~/components/admin";
+import { ProgressBar } from "~/components/NumberTicker";
 import { btnSmall, btnSmallGhost } from "~/components/ui";
 
 const CHIPS = [
@@ -97,7 +98,7 @@ export default function AdminSpaces({ loaderData }: Route.ComponentProps) {
                 </p>
                 {s.stage.progress && (
                   <div className="mt-2">
-                    <ProgressBar value={s.stage.progress.value} max={s.stage.progress.max} />
+                    <ProgressBar value={s.stage.progress.value} max={s.stage.progress.max} label={s.stage.detail} />
                   </div>
                 )}
               </div>
