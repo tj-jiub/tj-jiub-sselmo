@@ -3,6 +3,9 @@ import type { Route } from "./+types/admin-space";
 import { requireAdmin } from "~/lib/auth.server";
 import { getSpace, parseSpaceSettings, saveSpaceSettings, setOwnerConsent } from "~/lib/spaces.server";
 import { listShortlist } from "~/lib/owner.server";
+import { getSpaceOwner } from "~/lib/owner-spaces.server";
+import { listMarksForSpace } from "~/lib/marks.server";
+import { spaceStatusLabel } from "~/lib/space-status";
 import { loadSpaceDemand } from "~/lib/revenue.server";
 import { formatManwonRange } from "~/lib/money";
 import { defaultMargin } from "~/lib/revenue";
@@ -31,6 +34,9 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
     contacts: await listContacts(env.DB, space.id),
     demand: await loadSpaceDemand(env.DB, space),
     candidates: await listShortlist(env.DB, space.id),
+    owner: await getSpaceOwner(env.DB, space.id),
+    marks: Object.fromEntries(await listMarksForSpace(env.DB, space.id)),
+    photoKeys: space.photo_keys ? (JSON.parse(space.photo_keys) as string[]) : [],
   };
 }
 
@@ -54,8 +60,11 @@ export async function action({ request, params, context }: Route.ActionArgs) {
 const field = "w-full rounded-[10px] border border-line px-3 py-2.5 focus:border-ink focus:outline-none";
 
 export default function AdminSpace({ loaderData, actionData }: Route.ComponentProps) {
-  const { space, origin, report, breakdowns, contacts, demand, candidates } = loaderData;
+  const { space, origin, report, breakdowns, contacts, demand, candidates, owner, marks, photoKeys } = loaderData;
   const consented = space.owner_consent === 1;
+  const isPublic = space.status === "active" && consented;
+  // Owner-registered spaces go live through the queue on /admin, not through the consent toggle.
+  const awaitingApproval = space.owner_id !== null && space.status !== "active";
   const surveyUrl = `${origin}/s/${space.slug}`;
   const est = demand.estimate;
 
@@ -63,6 +72,32 @@ export default function AdminSpace({ loaderData, actionData }: Route.ComponentPr
     <Shell wide nav={false}>
       <Title eyebrow={space.neighborhood}>{space.name}</Title>
       <ErrorNote message={actionData?.error} />
+
+      <Section title="상태">
+        <p className="text-base">
+          <span className="rounded-full border border-line px-2.5 py-0.5 text-[15px] font-bold">{spaceStatusLabel(space)}</span>
+          {space.status === "rejected" && space.reject_reason && <span className="ml-3">반려 사유: {space.reject_reason}</span>}
+        </p>
+        {owner && (
+          <dl className="mt-4 grid grid-cols-[6rem_1fr] gap-y-1.5 text-base">
+            <dt className="text-muted">건물주 (개인정보)</dt>
+            <dd className="break-all">
+              {owner.name ?? "이름 없음"} · {owner.email}
+              {owner.phone ? ` · ${owner.phone}` : ""}
+            </dd>
+            <dt className="text-muted">등록 사진</dt>
+            <dd>
+              {photoKeys.length === 0
+                ? "없음"
+                : photoKeys.map((k, i) => (
+                    <a key={k} className="mr-3 underline" href={`/admin/files/${k}`}>
+                      사진 {i + 1}
+                    </a>
+                  ))}
+            </dd>
+          </dl>
+        )}
+      </Section>
 
       <div className="grid gap-x-10 md:grid-cols-2">
         <div className="min-w-0">
@@ -116,6 +151,8 @@ export default function AdminSpace({ loaderData, actionData }: Route.ComponentPr
                     <th className="py-2 font-medium">업종</th>
                     <th className="py-2 font-medium">점수(참고용)</th>
                     <th className="py-2 font-medium">트랙</th>
+                    <th className="py-2 font-medium">건물주 ★</th>
+                    <th className="py-2 font-medium">건물주 메모 (운영자와 공유)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line tabular-nums">
@@ -129,6 +166,8 @@ export default function AdminSpace({ loaderData, actionData }: Route.ComponentPr
                       </td>
                       <td className="py-2.5">{c.score}</td>
                       <td className="py-2.5">{c.track === "ssulmo" ? "쓸모" : "일반"}</td>
+                      <td className="py-2.5">{marks[c.id]?.starred ? "★" : "—"}</td>
+                      <td className="whitespace-pre-wrap py-2.5">{marks[c.id]?.memo || "—"}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -141,7 +180,11 @@ export default function AdminSpace({ loaderData, actionData }: Route.ComponentPr
       <Section title="건물주 동의">
         <div className="flex flex-wrap items-center justify-between gap-3 text-base">
           <p>
-            {consented ? "동의 완료 — 링크가 공개돼 있어요." : "동의 전 — 설문·리포트·신청 링크가 모두 비공개예요."}
+            {awaitingApproval
+              ? `건물주가 직접 등록한 공실이에요. 지금은 ${spaceStatusLabel(space)} 상태라 비공개예요. 공개는 대시보드의 '확인 대기 공실'에서 승인해야 해요.`
+              : isPublic
+                ? "동의 완료 — 링크가 공개돼 있어요."
+                : "동의 전 — 설문·리포트·신청 링크가 모두 비공개예요."}
             {space.consent_file_key && (
               <>
                 {" "}
@@ -151,13 +194,13 @@ export default function AdminSpace({ loaderData, actionData }: Route.ComponentPr
               </>
             )}
           </p>
-          <Form method="post">
-            <input type="hidden" name="intent" value="set-consent" />
-            <input type="hidden" name="consent" value={consented ? "0" : "1"} />
-            <button className={btnSmallGhost}>
-              {consented ? "동의 취소(비공개로)" : "동의 받음(공개하기)"}
-            </button>
-          </Form>
+          {!awaitingApproval && (
+            <Form method="post">
+              <input type="hidden" name="intent" value="set-consent" />
+              <input type="hidden" name="consent" value={consented ? "0" : "1"} />
+              <button className={btnSmallGhost}>{consented ? "동의 취소(비공개로)" : "동의 받음(공개하기)"}</button>
+            </Form>
+          )}
         </div>
       </Section>
 

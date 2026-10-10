@@ -4,6 +4,7 @@ import { requireAdmin } from "~/lib/auth.server";
 import { createBrokerIntro, getApplication, listBrokerIntros, setResultMailed } from "~/lib/applications.server";
 import { addConsultingMonth, addEducatorLink, listConsultingMonths, listEducatorLinks } from "~/lib/consulting.server";
 import { parseConsultingMonth, parseEducatorLink } from "~/lib/consulting";
+import { getMarkForApplication } from "~/lib/marks.server";
 import { markPending } from "~/lib/evaluation.server";
 import { scheduleEvaluation } from "~/lib/jobs.server";
 import { mailerFromEnv } from "~/lib/mail.server";
@@ -24,6 +25,7 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
     months: app.track === "ssulmo" ? await listConsultingMonths(env.DB, app.id) : [],
     educators: app.track === "ssulmo" ? await listEducatorLinks(env.DB, app.id) : [],
     report: app.ai_report ? (JSON.parse(app.ai_report) as AiReport) : null,
+    mark: await getMarkForApplication(env.DB, app.id),
     autoMail: mailerFromEnv(env) !== null,
     resultUrl: `${new URL(request.url).origin}/result/${app.result_token}`,
   };
@@ -82,7 +84,7 @@ const AI_STATUS = {
 } as const;
 
 export default function AdminApplication({ loaderData, actionData }: Route.ComponentProps) {
-  const { app, intros, months, educators, report, autoMail, resultUrl } = loaderData;
+  const { app, intros, months, educators, report, autoMail, resultUrl, mark } = loaderData;
   const canIntroduce = app.consent_broker_intro === 1;
   const ssulmo = app.track === "ssulmo";
   const status = AI_STATUS[app.ai_status];
@@ -199,6 +201,18 @@ export default function AdminApplication({ loaderData, actionData }: Route.Compo
               {saved === "re-evaluate" && <span className="text-base text-muted">다시 평가를 시작했어요.</span>}
             </Form>
           </Section>
+
+          {mark && (
+            <Section title="건물주 관심 ★ / 메모 (읽기 전용)">
+              <p className="text-base">건물주 관심 {mark.starred ? "★" : "—"}</p>
+              {mark.memo && (
+                <>
+                  <p className="mt-2 text-[15px] text-muted">메모 (운영자와 공유)</p>
+                  <p className="mt-1 whitespace-pre-wrap rounded-[14px] border border-line p-4 text-base">{mark.memo}</p>
+                </>
+              )}
+            </Section>
+          )}
 
           <Section title="결과 전달">
             {autoMail && (
