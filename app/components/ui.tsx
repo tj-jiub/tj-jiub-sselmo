@@ -24,8 +24,9 @@ export function NavBar() {
           <Link to="/find" className="hover:text-ink">
             공실 찾기
           </Link>
-          <Link to="/admin/login" className="hover:text-ink">
-            관리자
+          <Link to="/owner" className="hover:text-ink">
+            <span className="hidden sm:inline">공실 등록하기</span>
+            <span className="sm:hidden">공실 등록</span>
           </Link>
         </nav>
       </div>

@@ -19,8 +19,8 @@ export default function Home() {
                 창업할 자리를 찾아요 →
               </Link>
             </span>
-            <Link to="/admin/login" className="mt-5 inline-block text-[15px] text-muted underline underline-offset-4">
-              관리자예요
+            <Link to="/owner" className="mt-5 inline-block text-[15px] text-muted underline underline-offset-4">
+              건물주이신가요? 공실 등록하기
             </Link>
           </>
         }

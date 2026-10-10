@@ -145,7 +145,10 @@ export function ContinuousPage({ children, nav = "full", smooth = true }: { chil
           {nav === "full" && (
             <nav>
               <Link to="/find">공실 찾기</Link>
-              <Link to="/admin/login">관리자</Link>
+              <Link to="/owner">
+                <span className="hidden sm:inline">공실 등록하기</span>
+                <span className="sm:hidden">공실 등록</span>
+              </Link>
             </nav>
           )}
         </div>
