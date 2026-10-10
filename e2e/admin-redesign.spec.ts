@@ -114,3 +114,15 @@ test("admin owners list shows the seeded owner with PII", async ({ page }) => {
   await expect(row).toContainText("이건물");
   await expect(row).toContainText("010-1234-5678");
 });
+
+test.describe("ticker with reduced motion", () => {
+  test.use({ reducedMotion: "reduce" });
+  test("R1 shows the final digits at once and the value once for screen readers", async ({ page }) => {
+    await page.goto("/r/seongsu-01");
+    const tk = page.locator(".tk").first();
+    await expect(tk).toBeVisible();
+    await expect(tk.locator(".sr-only, .sr").first()).toHaveText(/120/);
+    const dir = await tk.locator("[aria-hidden='true']").first().getAttribute("aria-hidden");
+    expect(dir).toBe("true");
+  });
+});

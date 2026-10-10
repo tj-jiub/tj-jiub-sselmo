@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { dbRows } from "./db";
 
 // Needs EVALUATOR=fake and DEV_SHOW_LOGIN_LINK=1 in .dev.vars and a freshly migrated + seeded DB.
 // Link requests per run: random unknown email x1, owner@ssulmo.local x1, owner A x1, owner B x1
@@ -94,6 +95,39 @@ test("new owner: sign up, register a space, stays private, link is single-use", 
   await expect(page.getByText("이 링크는 쓸 수 없어요")).toBeVisible();
   expect(res?.headers()["referrer-policy"]).toBe("no-referrer");
   expect(res?.headers()["cache-control"]).toContain("no-store");
+});
+
+test("owner changes the cover photo; it is served privately while pending", async ({ page, request }) => {
+  await signUp(page, "cover");
+  await page.getByRole("link", { name: /공실 등록/ }).click();
+  const name = `e2e·사진 ${Date.now()}`;
+  await page.locator('input[name="name"]').fill(name);
+  await page.locator('input[name="district"]').fill("성동구");
+  await page.locator('input[name="dong"]').fill("행당동");
+  await page.locator('input[name="photos"]').setInputFiles([
+    { name: "a.png", mimeType: "image/png", buffer: PNG },
+    { name: "b.png", mimeType: "image/png", buffer: PNG },
+  ]);
+  await page.getByLabel(/소유자/).check();
+  await page.getByRole("button", { name: "등록하기" }).click();
+  await expect(page).toHaveURL(/\/owner\/spaces\?registered=1$/);
+  const card = page.getByTestId("space-card").filter({ hasText: name });
+  await expect(card.locator("img[alt='공실 대표 사진']")).toBeVisible();
+
+  const rowFor = () => dbRows<{ id: number; slug: string; cover_key: string; photo_keys: string }>(`SELECT id, slug, cover_key, photo_keys FROM spaces WHERE name = '${name}'`)[0];
+  const before = rowFor();
+  const keys = JSON.parse(before.photo_keys) as string[];
+  expect(before.cover_key).toBe(keys[0]);
+
+  await card.getByRole("link", { name: "사진 바꾸기" }).click();
+  await expect(page).toHaveURL(/\/owner\/spaces\/\d+\/photos$/);
+  await page.locator(`input[name="cover"][value="${keys[1]}"]`).check();
+  await Promise.all([page.waitForResponse((r) => r.request().method() === "POST" && r.url().includes("/photos")), page.getByRole("button", { name: "대표 사진 저장" }).click()]);
+  await expect.poll(() => rowFor().cover_key).toBe(keys[1]);
+
+  // Pending: the public cover route does not exist for anonymous visitors.
+  const res = await request.get(`/media/space/${before.slug}/cover`);
+  expect(res.status()).toBe(404);
 });
 
 test("seed owner: stages, candidates, star + memo persist, privacy", async ({ page }) => {
