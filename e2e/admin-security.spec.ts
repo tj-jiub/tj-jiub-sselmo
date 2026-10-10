@@ -35,7 +35,7 @@ test("admin sees the pending-space queue with the seeded owner space", async ({ 
   await page.getByLabel("이메일").fill("admin@ssulmo.local");
   await page.getByLabel("비밀번호").fill("ssulmo-dev");
   await page.getByRole("button", { name: "로그인" }).click();
-  await expect(page.getByRole("heading", { name: /확인 대기 공실/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /승인 대기 공실/ })).toBeVisible();
   const item = page.getByRole("listitem").filter({ hasText: "금호동 역세권 1층" }).filter({ hasText: "이건물" });
   await expect(item).toBeVisible();
   await expect(item.getByText("owner@ssulmo.local")).toBeVisible();

@@ -47,6 +47,8 @@ test("application → admin sees it after login", async ({ page }) => {
   await page.getByLabel("이메일").fill("admin@ssulmo.local");
   await page.getByLabel("비밀번호").fill("ssulmo-dev");
   await page.getByRole("button", { name: "로그인" }).click();
+  await expect(page).toHaveURL(/\/admin$/);
+  await page.goto("/admin/applications");
   await expect(page.getByText(`${name} · 젤라또 가게`)).toBeVisible();
 });
 
@@ -103,6 +105,8 @@ async function adminOpenApplication(page: import("@playwright/test").Page, name:
   await page.getByLabel("이메일").fill("admin@ssulmo.local");
   await page.getByLabel("비밀번호").fill("ssulmo-dev");
   await page.getByRole("button", { name: "로그인" }).click();
+  await expect(page).toHaveURL(/\/admin$/);
+  await page.goto("/admin/applications");
   await page.getByRole("link", { name: new RegExp(`${name} · 아이스크림`) }).click();
 }
 
@@ -128,6 +132,9 @@ test("admin records consulting months: 1% fee in a profit month, 0 in a loss mon
   await applyOnSsulmoTrack(page, name);
   await adminOpenApplication(page, name);
 
+  // The monthly records are a collapsible section (open only when it is the next thing to do).
+  const fold = page.locator("details", { has: page.locator("summary", { hasText: "월별 기록" }) });
+  if (!(await fold.evaluate((d: HTMLDetailsElement) => d.open))) await fold.locator("summary").click();
   const add = async (month: string, revenue: string, profit: string) => {
     await page.locator('input[name="month"]').fill(month);
     await page.locator('input[name="revenueManwon"]').fill(revenue);

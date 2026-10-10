@@ -17,7 +17,7 @@ async function adminLogin(page: Page) {
   await page.getByLabel("이메일").fill("admin@ssulmo.local");
   await page.getByLabel("비밀번호").fill("ssulmo-dev");
   await page.getByRole("button", { name: "로그인" }).click();
-  await expect(page.getByText("확인 대기 공실")).toBeVisible();
+  await expect(page.getByRole("heading", { name: /승인 대기 공실/ })).toBeVisible();
 }
 
 test("owner registers a space → not public → admin approves → public page opens and owner sees the stage", async ({ browser }) => {
@@ -45,6 +45,8 @@ test("owner registers a space → not public → admin approves → public page 
   await adminLogin(admin);
   const row = admin.locator("li, tr, div", { has: admin.getByText(name) }).filter({ has: admin.getByRole("button", { name: "승인" }) }).last();
   await expect(row).toContainText("e2e·승인 흐름");
+  // The admin cover URL (/admin/files/..., served as an attachment) must still render in an <img>.
+  await expect.poll(() => row.locator("img").first().evaluate((i: HTMLImageElement) => i.complete && i.naturalWidth > 0)).toBe(true);
   // Wait for the approve POST to finish before reading the owner's view; otherwise the owner page can
   // load while the space is still pending.
   await Promise.all([
@@ -75,6 +77,7 @@ test("owner memo is visible to the admin; the home page has no admin link", asyn
   await expect(card.getByTestId("memo-status")).toContainText("저장했어요");
 
   await adminLogin(admin);
+  await admin.goto("/admin/spaces");
   await admin.getByRole("link", { name: /성수동 골목 1층 공실/ }).click();
   await expect(admin.getByText(memoText)).toBeVisible();
 
