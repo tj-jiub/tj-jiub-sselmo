@@ -1,0 +1,361 @@
+<title>쓸모 관리자 개편 시안</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Geist+Mono:wght@500&display=swap">
+<style>
+/* Layout: review board — (1) number ticker, (2) space photo as avatar, (3) admin redesign; product frames are light-only like the product. */
+:root {
+  --bg: #f1f0ec; --fg: #1d1d1b; --muted: #5f5d58; --rule: #d8d6d0; --note-bg: #ffffff; --tag: #8a6d00;
+  --a-ink: #1d1d1b; --a-paper: #ffffff; --a-soft: #fafaf7; --a-muted: #5f5d58; --a-line: #e8e6e1;
+  --a-yellow: #fff0a6; --a-yellow-deep: #f2d65c; --a-green: #d3f0bf; --a-green-deep: #8fcb6e; --a-red: #b4442c;
+  --hl: rgba(255, 221, 87, 0.45);
+  --sans: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --mono: "Geist Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #171716; --fg: #ecebe7; --muted: #a3a19c; --rule: #2f2e2b; --note-bg: #20201e; --tag: #e8cf63; color-scheme: dark; } }
+:root[data-theme="dark"] { --bg: #171716; --fg: #ecebe7; --muted: #a3a19c; --rule: #2f2e2b; --note-bg: #20201e; --tag: #e8cf63; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); padding-inline: 16px; padding-block: 40px 96px; word-break: keep-all; overflow-wrap: break-word; }
+.board { max-width: 1240px; margin: 0 auto; }
+.kicker { font-family: var(--mono); font-size: 12px; color: var(--tag); letter-spacing: .06em; }
+.top h1 { font-size: 30px; line-height: 1.3; margin: 8px 0 12px; text-wrap: balance; }
+.top p { font-size: 16px; line-height: 1.7; color: var(--muted); margin: 0 0 8px; max-width: 72ch; }
+.top b { color: var(--fg); font-weight: 500; }
+.group-title { display: flex; align-items: baseline; gap: 12px; margin: 52px 0 18px; border-bottom: 1px solid var(--rule); padding-bottom: 10px; flex-wrap: wrap; }
+.group-title h2 { font-size: 18px; margin: 0; }
+.group-title span { font-size: 14px; color: var(--muted); }
+.screen { display: grid; gap: 12px; margin-bottom: 40px; min-width: 0; }
+.label { display: flex; gap: 8px; align-items: baseline; }
+.label .id { font-family: var(--mono); font-size: 12px; color: var(--tag); }
+.label .name { font-size: 15px; font-weight: 700; }
+.notes { margin: 0; padding: 12px 14px 12px 30px; background: var(--note-bg); border: 1px solid var(--rule); border-radius: 8px; font-size: 14px; line-height: 1.65; color: var(--muted); max-width: 920px; }
+.notes b { color: var(--fg); font-weight: 500; }
+.scroll { overflow-x: auto; border-radius: 10px; }
+.browser { min-width: 1100px; border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; background: var(--a-paper); }
+.url { font-family: var(--mono); font-size: 11px; color: var(--a-muted); background: #f4f4f1; padding: 8px 14px; border-bottom: 1px solid var(--a-line); }
+.replay { font: inherit; font-size: 13px; border: 1px solid var(--rule); background: var(--note-bg); color: var(--fg); border-radius: 8px; padding: 6px 12px; cursor: pointer; justify-self: start; }
+
+/* app */
+.app, .app * { color: var(--a-ink); }
+.app { font-family: var(--sans); font-size: 16px; line-height: 1.618; }
+.app .m, .app .m * { color: var(--a-muted); }
+.app .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.app mark { background: linear-gradient(transparent 11%, var(--hl) 11%, var(--hl) 89%, transparent 89%); padding: 0; }
+.app h3 { font-size: 41.9px; line-height: 1.236; letter-spacing: -.02em; margin: 6px 0 0; font-weight: 700; }
+.app h4 { font-size: 22px; margin: 0; font-weight: 700; }
+.app .eyebrow { font-size: 15px; font-weight: 500; color: var(--a-muted); }
+.app .btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--a-yellow-deep); background: var(--a-yellow); font: inherit; font-weight: 700; font-size: 15px; padding: 8px 14px; border-radius: 10px; text-decoration: none; white-space: nowrap; }
+.app .btn.ghost { background: var(--a-paper); border-color: var(--a-line); font-weight: 500; }
+
+/* ticker: fixed-width digit slots that roll; real value in an sr-only span */
+.tk { display: inline-flex; align-items: baseline; font-family: var(--mono); font-variant-numeric: tabular-nums; line-height: 1; }
+.tk .slot { display: inline-block; height: 1em; overflow: hidden; width: .62em; text-align: center; }
+.tk .reel { display: flex; flex-direction: column; transition: transform 1400ms cubic-bezier(.22,.61,.36,1); }
+.tk .reel span { height: 1em; line-height: 1; }
+.tk .sep { width: .3em; text-align: center; }
+.tk .unit { font-family: var(--sans); font-size: .42em; margin-left: .18em; font-weight: 500; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) { .tk .reel { transition: none; } }
+
+/* avatar */
+.av { width: 56px; height: 56px; border-radius: 14px; flex-shrink: 0; overflow: hidden; display: grid; place-items: center; background: var(--a-soft); border: 1px solid var(--a-line); font-weight: 700; font-size: 22px; }
+.av.lg { width: 88px; height: 88px; border-radius: 20px; font-size: 34px; }
+.av.sm { width: 40px; height: 40px; border-radius: 10px; font-size: 16px; }
+.av svg { width: 100%; height: 100%; display: block; }
+
+/* stats band */
+.band { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--a-line); }
+.band > div { padding: 26px 24px 0 0; }
+.band .tk { font-size: 56px; font-weight: 500; }
+.band p { margin: 10px 0 0; font-size: 15px; color: var(--a-muted); }
+
+/* owner card */
+.ocard { border: 1px solid var(--a-line); border-radius: 16px; padding: 22px; display: grid; gap: 14px; }
+.ocard .hd { display: flex; gap: 14px; align-items: center; }
+.ocard .nm { font-size: 19px; font-weight: 700; }
+.ocard .tk { font-size: 40px; }
+.prog { height: 6px; background: var(--a-line); border-radius: 3px; overflow: hidden; }
+.prog i { display: block; height: 100%; width: 0; background: var(--a-green-deep); transition: width 1400ms cubic-bezier(.22,.61,.36,1); }
+
+/* admin shell */
+.shell { display: grid; grid-template-columns: 220px 1fr; min-height: 640px; }
+.side { border-right: 1px solid var(--a-line); padding: 22px 16px; background: var(--a-soft); }
+.side .logo { font-weight: 700; font-size: 18px; padding: 0 10px 18px; }
+.side a { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-radius: 10px; text-decoration: none; font-size: 16px; margin-bottom: 2px; }
+.side a.on { background: var(--a-paper); border: 1px solid var(--a-line); font-weight: 700; }
+.side a .n { font-family: var(--mono); font-size: 14px; }
+.side a .n.hot { background: var(--a-yellow); border-radius: 999px; padding: 0 8px; }
+.side .foot { margin-top: 24px; padding: 12px; font-size: 14px; }
+.main { padding: 30px 36px 40px; min-width: 0; }
+.todo { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 22px; }
+.todo a { border: 1px solid var(--a-line); border-radius: 16px; padding: 18px 18px 16px; text-decoration: none; display: grid; gap: 6px; }
+.todo a.hot { border-color: var(--a-yellow-deep); background: #fffbe6; }
+.todo .tk { font-size: 44px; }
+.todo b { font-size: 16px; }
+.todo span { font-size: 14px; }
+.sec-h { display: flex; justify-content: space-between; align-items: baseline; margin: 34px 0 10px; }
+.sec-h p { margin: 2px 0 0; font-size: 15px; }
+.list { border-top: 1px solid var(--a-line); }
+.item { display: grid; grid-template-columns: 56px 1fr 220px 150px 120px; gap: 18px; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--a-line); }
+.item .t { font-weight: 700; font-size: 17px; }
+.item .s { font-size: 15px; }
+.item .state { font-size: 15px; font-weight: 500; }
+.item .state.warn { color: var(--a-red); }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { border: 1px solid var(--a-line); border-radius: 999px; padding: 6px 14px; font-size: 15px; }
+.chip.on { background: var(--a-ink); border-color: var(--a-ink); }
+.chip.on, .chip.on * { color: var(--a-paper); }
+.search { border: 1px solid var(--a-line); border-radius: 10px; padding: 8px 12px; font: inherit; font-size: 15px; width: 260px; }
+.next { display: flex; justify-content: space-between; align-items: center; gap: 16px; border: 1px solid var(--a-yellow-deep); background: #fffbe6; border-radius: 14px; padding: 16px 20px; margin-top: 18px; }
+.next b { font-size: 17px; }
+.steps { display: flex; gap: 6px; margin-top: 16px; flex-wrap: wrap; }
+.steps span { font-size: 14px; padding: 4px 0; border-bottom: 2px solid var(--a-line); min-width: 110px; }
+.steps span.done { border-color: var(--a-green-deep); }
+.steps span.now { border-color: var(--a-ink); font-weight: 700; }
+.kv { display: grid; grid-template-columns: 120px 1fr; gap: 8px 16px; font-size: 16px; margin-top: 10px; }
+.kv dt { color: var(--a-muted); }
+.kv dd { margin: 0; }
+.two { display: grid; grid-template-columns: 1.618fr 1fr; gap: 32px; margin-top: 24px; }
+.box { border: 1px solid var(--a-line); border-radius: 14px; padding: 18px 20px; }
+</style>
+
+<div class="board">
+  <section class="top">
+    <div class="kicker">SSULMO · 시안 v13 · 숫자 · 공실 사진 · 관리자 개편 · 2026-10-10</div>
+    <h1>숫자는 굴러 올라가고, 공실은 얼굴이 생기고, 관리자는 “할 일”부터</h1>
+    <p><b>1. 숫자</b>: tbd studio의 숫자 방식(자리마다 고정 폭 칸에서 0부터 굴러 올라감, 화면 읽기 프로그램에는 최종 숫자만 읽힘)을 가져왔어요. 아래 “다시 재생”을 눌러 보세요.</p>
+    <p><b>2. 공실 사진</b>: 건물주가 올린 첫 번째 사진이 그 공실의 프로필 사진이 돼요. 사진이 없으면 동네 첫 글자가 들어가요.</p>
+    <p><b>3. 관리자</b>: 한 페이지에 다 쌓던 구조를 <b>왼쪽 메뉴 4개(할 일·공실·신청·건물주)</b>로 나누고, 첫 화면은 “지금 처리할 일” 숫자 카드로 시작해요.</p>
+  </section>
+
+  <div class="group-title"><h2>1 · 숫자 굴러가기</h2><span>모집 페이지 숫자 띠 · 건물주 카드</span></div>
+  <article class="screen">
+    <div class="label"><span class="id">N1</span><span class="name">모집 페이지 숫자 띠 (R1)</span></div>
+    <div class="scroll"><div class="browser"><div class="url">ssulmo.app/r/seongsu-01</div>
+      <div class="app" style="padding:30px 40px 40px">
+        <div class="band">
+          <div><span class="tk" data-to="120" data-unit="명"></span><p>참여한 주민</p></div>
+          <div><span class="tk" data-to="100" data-unit="명"></span><p>아이스크림·디저트 이용 의향</p></div>
+          <div><span class="tk" data-to="83" data-unit="%"></span><p>1위 업종을 고른 비율</p></div>
+        </div>
+      </div>
+    </div></div>
+    <button class="replay" type="button" data-replay>다시 재생</button>
+    <ul class="notes">
+      <li>화면에 들어오는 순간 한 번만 굴러가요(1.4초, 끝에서 천천히 멈춤). 숫자 칸 너비가 고정이라 굴러가는 동안 글자가 흔들리지 않아요.</li>
+      <li>스크린 리더에는 “120명”만 한 번 읽혀요. 움직임 줄이기를 켠 기기에서는 바로 최종 숫자가 보여요.</li>
+      <li>적용 위치: 모집 페이지 숫자 띠, 건물주 “내 공실” 카드(N2), 관리자 “할 일” 카드(A1).</li>
+    </ul>
+  </article>
+
+  <div class="group-title"><h2>2 · 공실 사진 = 프로필 사진</h2><span>등록할 때 올린 첫 사진</span></div>
+  <article class="screen">
+    <div class="label"><span class="id">N2</span><span class="name">건물주 “내 공실” 카드</span></div>
+    <div class="scroll"><div class="browser"><div class="url">ssulmo.app/owner/spaces</div>
+      <div class="app" style="padding:30px 40px 40px">
+        <div class="eyebrow">이건물 님</div>
+        <h3>내 공실 <mark>2곳</mark></h3>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:24px">
+          <div class="ocard">
+            <div class="hd"><div class="av lg" data-photo="1"></div><div><div class="m" style="font-size:15px">후보 평가 완료</div><div class="nm">성수동 골목 1층</div><div class="m" style="font-size:15px">성동구 성수동</div></div></div>
+            <div><span class="tk" data-to="5" data-unit="명의 후보"></span></div>
+            <div style="display:flex;gap:8px"><span class="btn">후보 보기</span><span class="btn ghost">사진 바꾸기</span></div>
+          </div>
+          <div class="ocard">
+            <div class="hd"><div class="av lg" data-photo="2"></div><div><div class="m" style="font-size:15px">주민 의견 모으는 중</div><div class="nm">금호동 역세권 1층</div><div class="m" style="font-size:15px">성동구 금호동</div></div></div>
+            <div><span class="tk" data-to="32" data-unit="/ 50명"></span></div>
+            <div class="prog"><i data-w="64"></i></div>
+          </div>
+          <div class="ocard">
+            <div class="hd"><div class="av lg">행</div><div><div class="m" style="font-size:15px">운영자 확인 대기</div><div class="nm">행당동 1층</div><div class="m" style="font-size:15px">사진 없음 → 동네 첫 글자</div></div></div>
+            <span class="btn ghost" style="justify-self:start">사진 올리기</span>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <ul class="notes">
+      <li>건물주가 등록할 때 올린 <b>첫 번째 사진이 공실의 프로필 사진</b>이에요. 둥근 네모로 잘라서 보여주고, 카드에서 “사진 바꾸기”로 대표 사진을 고를 수 있어요.</li>
+      <li>같은 사진이 <b>관리자 목록, 창업 매칭 결과 카드, 모집 페이지 첫 화면</b>에도 작게 따라 나와요. 사진은 공개 승인된 공실만 바깥에 보여요.</li>
+      <li>구현 시 바뀌는 것: 지금은 사진을 관리자만 볼 수 있어서, <b>승인된 공실의 대표 사진만 공개로 보여주는 경로</b>를 새로 만들어요.</li>
+    </ul>
+  </article>
+
+  <div class="group-title"><h2>3 · 관리자 개편</h2><span>왼쪽 메뉴 4개 · 첫 화면은 할 일</span></div>
+  <article class="screen">
+    <div class="label"><span class="id">A1</span><span class="name">관리자 첫 화면 · 할 일</span></div>
+    <div class="scroll"><div class="browser"><div class="url">ssulmo.app/admin</div>
+      <div class="app shell">
+        <nav class="side">
+          <div class="logo">쓸모 관리자</div>
+          <a class="on" href="#a1">할 일 <span class="n hot">7</span></a>
+          <a href="#a2">공실 <span class="n">8</span></a>
+          <a href="#a3">신청 <span class="n">24</span></a>
+          <a href="#a1">건물주 <span class="n">3</span></a>
+          <div class="foot m">admin@ssulmo.local<br>로그아웃</div>
+        </nav>
+        <main class="main">
+          <div class="eyebrow">10월 10일 금요일</div>
+          <h3>지금 처리할 일 <mark>7건</mark></h3>
+          <div class="todo">
+            <a class="hot" href="#a2"><span class="tk" data-to="2" data-unit="곳"></span><b>공실 승인 대기</b><span class="m">건물주가 등록했어요</span></a>
+            <a class="hot" href="#a3"><span class="tk" data-to="3" data-unit="건"></span><b>결과 메일 안 보냄</b><span class="m">평가는 끝났어요</span></a>
+            <a href="#a3"><span class="tk" data-to="1" data-unit="건"></span><b>AI 평가 실패</b><span class="m">재평가가 필요해요</span></a>
+            <a href="#a3"><span class="tk" data-to="1" data-unit="건"></span><b>이번 달 매출 미기록</b><span class="m">쓸모 트랙</span></a>
+          </div>
+          <div class="sec-h"><div><h4>승인 대기 공실</h4><p class="m">확인하고 공개하면 QR 설문이 시작돼요</p></div></div>
+          <div class="list">
+            <div class="item" style="grid-template-columns:56px 1fr 180px 200px">
+              <div class="av" data-photo="3"></div>
+              <div><div class="t">행당동 1층</div><div class="s m">성동구 행당동 · 건물주 이건물 · 10월 10일 등록</div></div>
+              <div class="s m">사진 2장 · 위치 특징 있음</div>
+              <div style="display:flex;gap:8px;justify-content:flex-end"><span class="btn">승인</span><span class="btn ghost">반려</span></div>
+            </div>
+            <div class="item" style="grid-template-columns:56px 1fr 180px 200px">
+              <div class="av">왕</div>
+              <div><div class="t">왕십리 코너</div><div class="s m">성동구 도선동 · 건물주 박건물 · 10월 9일 등록</div></div>
+              <div class="s m">사진 없음</div>
+              <div style="display:flex;gap:8px;justify-content:flex-end"><span class="btn">승인</span><span class="btn ghost">반려</span></div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div></div>
+    <ul class="notes">
+      <li>예전 첫 화면은 “공실 전체 목록 + 신청 전체 표”가 한 페이지에 쌓여 있었어요. 이제 <b>첫 화면에는 처리할 일만</b> 숫자 카드 4개로 보여주고, 누르면 해당 목록으로 걸러져서 열려요.</li>
+      <li>노란 카드 = 오늘 꼭 처리할 일. 할 일이 0건이면 “처리할 일이 없어요”만 보여요.</li>
+      <li>왼쪽 메뉴의 숫자도 같은 기준이에요(노란 동그라미 = 처리할 일이 있음).</li>
+    </ul>
+  </article>
+
+  <article class="screen" id="a2">
+    <div class="label"><span class="id">A2</span><span class="name">공실 목록</span></div>
+    <div class="scroll"><div class="browser"><div class="url">ssulmo.app/admin/spaces?status=collecting</div>
+      <div class="app shell">
+        <nav class="side">
+          <div class="logo">쓸모 관리자</div>
+          <a href="#a1">할 일 <span class="n hot">7</span></a>
+          <a class="on" href="#a2">공실 <span class="n">8</span></a>
+          <a href="#a3">신청 <span class="n">24</span></a>
+          <a href="#a1">건물주 <span class="n">3</span></a>
+        </nav>
+        <main class="main">
+          <div style="display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap">
+            <div><div class="eyebrow">공실</div><h3 style="font-size:32px">공실 8곳</h3></div>
+            <div style="display:flex;gap:8px"><input class="search" id="a2-q" placeholder="공실 이름·동네 검색"><span class="btn">+ 공실 등록</span></div>
+          </div>
+          <div class="chips" style="margin-top:18px"><span class="chip">전체 8</span><span class="chip">승인 대기 2</span><span class="chip on">의견 모으는 중 3</span><span class="chip">후보 준비됨 2</span><span class="chip">반려 1</span></div>
+          <div class="list" style="margin-top:16px">
+            <div class="item" style="grid-template-columns:56px 1fr 240px 150px">
+              <div class="av" data-photo="2"></div>
+              <div><div class="t">금호동 역세권 1층</div><div class="s m">성동구 금호동 · 건물주 이건물</div></div>
+              <div><div class="s">주민 의견 <span class="mono">32 / 50</span>명</div><div class="prog" style="margin-top:6px"><i data-w="64"></i></div></div>
+              <div style="text-align:right"><span class="btn ghost">QR · 상세</span></div>
+            </div>
+            <div class="item" style="grid-template-columns:56px 1fr 240px 150px">
+              <div class="av">이</div>
+              <div><div class="t">이태원동 2층</div><div class="s m">용산구 이태원동 · 운영자 등록</div></div>
+              <div><div class="s">주민 의견 <span class="mono">20 / 50</span>명</div><div class="prog" style="margin-top:6px"><i data-w="40"></i></div></div>
+              <div style="text-align:right"><span class="btn ghost">QR · 상세</span></div>
+            </div>
+            <div class="item" style="grid-template-columns:56px 1fr 240px 150px">
+              <div class="av">망</div>
+              <div><div class="t">망원동 1층 코너</div><div class="s m">마포구 망원동 · 운영자 등록</div></div>
+              <div><div class="s">주민 의견 <span class="mono">48 / 50</span>명</div><div class="prog" style="margin-top:6px"><i data-w="96"></i></div></div>
+              <div style="text-align:right"><span class="btn ghost">QR · 상세</span></div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div></div>
+    <ul class="notes">
+      <li>“응답 0 · 반려” 같은 축약 대신 <b>단계 이름(승인 대기 / 의견 모으는 중 / 후보 준비됨 / 반려)</b>으로 걸러 보고, 의견 모으는 중인 곳은 <b>50명까지 진행 막대</b>로 보여줘요.</li>
+      <li>각 줄 맨 앞에 공실 대표 사진이 들어가서 한눈에 구분돼요.</li>
+    </ul>
+  </article>
+
+  <article class="screen" id="a3">
+    <div class="label"><span class="id">A3</span><span class="name">신청 목록 + 신청 상세 (다음 할 일)</span></div>
+    <div class="scroll"><div class="browser"><div class="url">ssulmo.app/admin/applications/7</div>
+      <div class="app shell">
+        <nav class="side">
+          <div class="logo">쓸모 관리자</div>
+          <a href="#a1">할 일 <span class="n hot">7</span></a>
+          <a href="#a2">공실 <span class="n">8</span></a>
+          <a class="on" href="#a3">신청 <span class="n">24</span></a>
+          <a href="#a1">건물주 <span class="n">3</span></a>
+        </nav>
+        <main class="main">
+          <div style="display:flex;gap:16px;align-items:center">
+            <div class="av" data-photo="1"></div>
+            <div><div class="eyebrow">성수동 골목 1층 · 쓸모 트랙</div><h3 style="font-size:32px;margin:0">김예시 · 젤라또</h3></div>
+          </div>
+          <div class="steps"><span class="done">신청</span><span class="done">AI 평가 88점</span><span class="now">결과 메일</span><span>건물주 검토</span><span>계약 (공인중개사)</span></div>
+          <div class="next">
+            <div><b>다음 할 일: 결과 메일 보내기</b><div class="m" style="font-size:15px">자동 메일이 꺼져 있어요. 링크를 복사해서 보내고 체크해 주세요.</div></div>
+            <div style="display:flex;gap:8px"><span class="btn">링크 복사</span><span class="btn ghost">보냈어요</span></div>
+          </div>
+          <div class="two">
+            <div class="box">
+              <h4 style="font-size:18px">AI 평가</h4>
+              <dl class="kv"><dt>점수</dt><dd><span class="mono">88</span> (참고용) · 잘 맞아요</dd><dt>강점</dt><dd>수요 일치, 낮은 초기 비용</dd><dt>위험</dt><dd>겨울 매출 감소</dd></dl>
+              <span class="btn ghost" style="margin-top:12px">리포트 전체 · 재평가</span>
+            </div>
+            <div class="box">
+              <h4 style="font-size:18px">건물주 반응</h4>
+              <p style="margin:8px 0 0;font-size:16px">★ 관심 표시함</p>
+              <p class="m" style="margin:4px 0 0;font-size:15px">“인테리어 직접 한다고 함. 다음 주 미팅.”</p>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div></div>
+    <ul class="notes">
+      <li>신청 상세 맨 위에 <b>진행 단계 줄</b>(신청 → AI 평가 → 결과 메일 → 건물주 검토 → 계약)과 <b>“다음 할 일” 상자</b>가 있어서, 들어오자마자 무엇을 눌러야 하는지 보여요.</li>
+      <li>신청 목록은 공실 목록과 같은 모양이에요: 상태 칩(평가 중 / 메일 보낼 차례 / 건물주 검토 중 / 실패), 사진, 한 줄 요약, 다음 할 일 버튼.</li>
+      <li>쓸모 트랙 월 기록, 교육자 연결, 개인정보(이메일·사업계획)는 아래쪽 접힌 영역으로 옮겨서 첫 화면을 가볍게 해요.</li>
+    </ul>
+  </article>
+</div>
+
+<script>
+(() => {
+  // Placeholder "photos": soft generated shop-front illustrations (data only lives in the page).
+  const PALETTES = { 1: ["#f3e9d2", "#c9b28a", "#8fcb6e"], 2: ["#e6eef2", "#9fb4c2", "#f2d65c"], 3: ["#efe6ee", "#b9a3b6", "#8fcb6e"] };
+  document.querySelectorAll("[data-photo]").forEach((el) => {
+    const [bg, wall, awn] = PALETTES[el.dataset.photo];
+    el.innerHTML = `<svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" fill="${bg}"/><rect x="8" y="22" width="48" height="38" fill="${wall}"/><path d="M6 22h52l-4-10H10z" fill="${awn}"/><rect x="14" y="32" width="16" height="28" fill="#fafaf7"/><rect x="36" y="32" width="14" height="14" fill="#fafaf7"/></svg>`;
+    el.setAttribute("role", "img");
+    el.setAttribute("aria-label", "공실 대표 사진");
+  });
+
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // Build tickers: one fixed-width slot per digit, each a reel of 0–9 that rolls to its target.
+  document.querySelectorAll(".tk").forEach((el) => {
+    const to = el.dataset.to, unit = el.dataset.unit || "";
+    el.innerHTML = `<span class="sr">${Number(to).toLocaleString("ko-KR")}${unit}</span><span aria-hidden="true" style="display:inline-flex;align-items:baseline">${
+      [...to].map(() => `<span class="slot"><span class="reel">${[...Array(10).keys()].map((d) => `<span>${d}</span>`).join("")}</span></span>`).join("")
+    }</span>${unit ? `<span class="unit" aria-hidden="true">${unit}</span>` : ""}`;
+  });
+  function roll(el, on) {
+    const digits = [...el.dataset.to];
+    el.querySelectorAll(".reel").forEach((reel, i) => {
+      reel.style.transitionDelay = `${i * 90}ms`;
+      reel.style.transform = on ? `translateY(-${digits[i]}em)` : "translateY(0)";
+    });
+  }
+  function fill(bar, on) { bar.style.width = on ? bar.dataset.w + "%" : "0"; }
+  const io = new IntersectionObserver((es) => es.forEach((e) => {
+    if (!e.isIntersecting) return;
+    e.target.querySelectorAll(".tk").forEach((t) => roll(t, true));
+    e.target.querySelectorAll(".prog i").forEach((b) => fill(b, true));
+    io.unobserve(e.target);
+  }), { threshold: 0.4 });
+  document.querySelectorAll(".browser").forEach((b) => (reduce ? (b.querySelectorAll(".tk").forEach((t) => roll(t, true)), b.querySelectorAll(".prog i").forEach((x) => fill(x, true))) : io.observe(b)));
+
+  document.querySelector("[data-replay]").addEventListener("click", () => {
+    const all = document.querySelectorAll(".tk"), bars = document.querySelectorAll(".prog i");
+    all.forEach((t) => roll(t, false)); bars.forEach((b) => fill(b, false));
+    requestAnimationFrame(() => requestAnimationFrame(() => { all.forEach((t) => roll(t, true)); bars.forEach((b) => fill(b, true)); }));
+  });
+})();
+</script>
