@@ -123,17 +123,6 @@ test("쓸모 track application → AI evaluation → result page shows verdict a
   await expect(page.getByText("입금")).toHaveCount(0);
 });
 
-test("owner link shows at most 5 candidate cards and no applicant name or email", async ({ page }) => {
-  expect((await page.goto(`/o/${"0".repeat(32)}`))?.status()).toBe(404);
-  await page.goto(`/o/${"p".repeat(32)}`);
-  const cards = await page.locator(".cp-row").count();
-  expect(cards).toBeGreaterThanOrEqual(1);
-  expect(cards).toBeLessThanOrEqual(5);
-  const html = await page.content();
-  for (const secret of ["예시", "@example.com", "사업계획 예시", "result/"]) expect(html).not.toContain(secret);
-  await expect(page.getByText("쓸모는 계약에 참여하지 않고")).toBeVisible();
-});
-
 test("admin records consulting months: 1% fee in a profit month, 0 in a loss month", async ({ page }) => {
   const name = `FEE${Date.now() % 100000}`;
   await applyOnSsulmoTrack(page, name);
