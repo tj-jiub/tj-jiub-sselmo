@@ -4,6 +4,8 @@ import { isAdmin, login } from "~/lib/auth.server";
 import { adminLoginBlocked, clientIp, recordAdminLoginFailure } from "~/lib/rate-limit.server";
 import { ErrorNote, Shell, SubmitButton, TextInput, Title } from "~/components/ui";
 
+export const meta: Route.MetaFunction = () => [{ name: "robots", content: "noindex" }];
+
 export async function loader({ request, context }: Route.LoaderArgs) {
   if (await isAdmin(request, context.cloudflare.env)) throw redirect("/admin");
   return null;

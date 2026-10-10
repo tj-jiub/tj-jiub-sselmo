@@ -2,6 +2,8 @@ import { Form, Link, Outlet } from "react-router";
 import type { Route } from "./+types/admin-layout";
 import { requireAdmin } from "~/lib/auth.server";
 
+export const meta: Route.MetaFunction = () => [{ name: "robots", content: "noindex" }];
+
 export async function loader({ request, context }: Route.LoaderArgs) {
   await requireAdmin(request, context.cloudflare.env);
   return null;
